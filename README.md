@@ -1,38 +1,70 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+<table align="center">
+  <tr>
+    <td align="center">
+      <a href="https://dans.knaw.nl/" target="_blank">
+        <img src="https://dans.knaw.nl/wp-content/uploads/2021/10/Logo-DANS.svg" width="400" alt="DANS Logo" />
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://www.rd-alliance.org/" target="_blank">
+        <img src="https://www.rd-alliance.org/wp-content/uploads/2024/04/RDA_Logotype_CMYK.png" width="350" alt="RDA LOGO" />
+      </a>
+    </td>
+  </tr>
+</table>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+<p align="center">Micro-service for storing RDA Tiger deposits and annotations </p>
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This service is part of the RDA Tiger initiative and is developed by the Data Archiving and Networked Services (DANS) in the Netherlands.
+This micro-service is responsible for storing various deposits. It includes the following capabilities:
 
-## Installation
+- CSV seed ingest
+- Annotation creation
+
+## Usage and Management
+
+This repo includes two setups: a `production` setup and a `local` setup.
+
+### Environment Variables Files
+
+The service can use three different .env files: `.env.local`, `.env.development`, `.env.production`.
+
+It is **_IMPORTANT_** to note that if multiple .env files are present, it will use them in the following order: `local -> development -> production`.
+
+The easiest method is to simply copy the needed file from the `.env.example` file:
 
 ```bash
-$ pnpm install
+cp .env.example .env.local
 ```
 
-## Running the app
+### Local Usage
+
+The following prerequisites are needed for the project:
+
+- Valid RabbitMQ instance
+- Docker
+- Node/pnpm
+
+#### Installation
+
+```bash
+# The service is set up with pnpm, so make sure to install packages with it.
+pnpm install
+```
+
+#### Start the required Services
+
+The required services are included in the `docker-compose.yml` file. You can start all needed services with the following command:
+
+```bash
+# Docker only supports .env files by default, so we need to specify the exact file.
+docker compose up --env-file .env.local -d
+```
+
+#### Running the app
 
 ```bash
 # development
@@ -45,7 +77,7 @@ $ pnpm run start:dev
 $ pnpm run start:prod
 ```
 
-## Test
+#### Test
 
 ```bash
 # unit tests
@@ -57,17 +89,3 @@ $ pnpm run test:e2e
 # test coverage
 $ pnpm run test:cov
 ```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
