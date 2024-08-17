@@ -8,7 +8,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import rmqConfig, { CONFIG_RMQ } from './config/rmq.config';
 import { MSG_BROKER_TOKEN } from './constants';
 import { ResourcesModule } from './resources/resources.module';
-import dbConfig from './config/db.config';
+import dbConfig, { CONFIG_DB } from './config/db.config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
@@ -41,6 +42,24 @@ import dbConfig from './config/db.config';
         },
       },
     ]),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const config =
+          configService.get<ConfigType<typeof dbConfig>>(CONFIG_DB);
+        return {
+          type: 'postgres',
+          host: config.host,
+          port: config.port,
+          username: config.username,
+          password: config.password,
+          database: config.database,
+          synchronize: config.synchronize,
+          autoLoadEntities: true,
+        };
+      },
+    }),
     ResourcesModule,
   ],
   controllers: [AppController],
