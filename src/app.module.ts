@@ -7,6 +7,7 @@ import validationSchema from './config/validation-schema';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import rmqConfig, { CONFIG_RMQ } from './config/rmq.config';
 import { MSG_BROKER_TOKEN } from './constants';
+import { ResourcesModule } from './resources/resources.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { MSG_BROKER_TOKEN } from './constants';
         },
       },
     ]),
+    ResourcesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
