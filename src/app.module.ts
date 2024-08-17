@@ -8,6 +8,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import rmqConfig, { CONFIG_RMQ } from './config/rmq.config';
 import { MSG_BROKER_TOKEN } from './constants';
 import { ResourcesModule } from './resources/resources.module';
+import dbConfig from './config/db.config';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { ResourcesModule } from './resources/resources.module';
       isGlobal: false,
       envFilePath: ['.env.local', '.env.development', '.env.production'],
       ignoreEnvVars: true,
-      load: [commonConfig, rmqConfig],
+      load: [commonConfig, rmqConfig, dbConfig],
       validationSchema,
       validationOptions: {
         allowUnknown: false,
