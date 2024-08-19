@@ -450,6 +450,25 @@ export class SeedingService {
             };
           }),
         );
+
+        const individualResources =
+          await this.individualResourceRepository.find({
+            where: { uuid_resource: resource.uuid_rda },
+          });
+
+        const individuals = await Promise.all(
+          individualResources.map(async (individualResource) => {
+            const individual = await this.individualRepository.findOne({
+              where: { uuid_individual: individualResource.uuid_individual },
+            });
+
+            return {
+              ...individual,
+              relation: individualResource.relation,
+            };
+          }),
+        );
+
         return {
           ...resource,
           subjects: subjectResources,
@@ -459,6 +478,7 @@ export class SeedingService {
           gorc_elements: gorcElements,
           gorc_attributes: gorcAttributes,
           disciplines: disciplines,
+          individuals: individuals,
         };
       }),
     );
