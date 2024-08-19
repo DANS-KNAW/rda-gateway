@@ -182,166 +182,169 @@ export class SeedingService {
         items: parsedData.length,
       });
 
-      switch (file.originalname) {
-        case 'Disciplines.tsv':
-          await this.saveObjectInOrder(this.disciplineRepository, parsedData);
-          break;
-        case 'GORC-attributes.tsv':
-          await this.saveObjectInOrder(this.gorcAtributeRepository, parsedData);
-          break;
-        case 'GORC-Element.tsv':
-          await this.saveObjectInOrder(this.gorcElementRepository, parsedData);
-          break;
-        case 'Group-Group.tsv':
-          await this.saveObjectInOrder(this.groupGroupRepository, parsedData);
-          break;
-        case 'Group-Resource.tsv':
-          await this.saveObjectInOrder(
-            this.groupResourceRepository,
-            parsedData,
-          );
-          break;
-        case 'Individual-GroupAll.tsv':
-          await this.saveObjectInOrder(
-            this.individualGroupAllRepository,
-            parsedData,
-          );
-          break;
-        case 'Individual-Group.tsv':
-          await this.saveObjectInOrder(
-            this.individualGroupRepository,
-            parsedData,
-          );
-          break;
-        case 'Individual-Institution.tsv':
-          await this.saveObjectInOrder(
-            this.individualInstitutionRepository,
-            parsedData,
-          );
-          break;
-        case 'Individual-Member.tsv':
-          await this.saveObjectInOrder(
-            this.individualMemberRepository,
-            parsedData,
-          );
-          break;
-        case 'Individual-Resource.tsv':
-          await this.saveObjectInOrder(
-            this.individualResourceRepository,
-            parsedData,
-          );
-          break;
-        case 'Individual.tsv':
-          await this.saveObjectInOrder(this.individualRepository, parsedData);
-          break;
-        case 'Institution-Country.tsv':
-          await this.saveObjectInOrder(
-            this.institutionCountryRepository,
-            parsedData,
-          );
-          break;
-        case 'Institution-InstitutionRole.tsv':
-          await this.saveObjectInOrder(
-            this.institutionInstitutionRoleRepository,
-            parsedData,
-          );
-          break;
-        case 'Institution-OrganisationType.tsv':
-          await this.saveObjectInOrder(
-            this.institutionOrganisationTypeRepository,
-            parsedData,
-          );
-          break;
-        case 'Institution_Roles.tsv':
-          await this.saveObjectInOrder(
-            this.institutionRoleRepository,
-            parsedData,
-          );
-          break;
-        case 'Institutions.tsv':
-          await this.saveObjectInOrder(this.institutionRepository, parsedData);
-          break;
-        case 'InterestGroup.tsv':
-          await this.saveObjectInOrder(
-            this.interestGroupRepository,
-            parsedData,
-          );
-          break;
-        case 'OrgType.tsv':
-          await this.saveObjectInOrder(this.orgTypeRepository, parsedData);
-          break;
-        case 'Pathway.tsv':
-          await this.saveObjectInOrder(this.pathwayRepository, parsedData);
-          break;
-        case 'Relation.tsv':
-          await this.saveObjectInOrder(this.relationRepository, parsedData);
-          break;
-        case 'Resource-Disciplines.tsv':
-          await this.saveObjectInOrder(
-            this.resourceDisciplineRepository,
-            parsedData,
-          );
-          break;
-        case 'Resource-GORC-Attribute.tsv':
-          await this.saveObjectInOrder(
-            this.resourceGORCAttributeRepository,
-            parsedData,
-          );
-          break;
-        case 'Resource-GORC-Element.tsv':
-          await this.saveObjectInOrder(
-            this.resourceGORCElementRepository,
-            parsedData,
-          );
-          break;
-        case 'Resource-Pathway.tsv':
-          await this.saveObjectInOrder(
-            this.resourcePathwayRepository,
-            parsedData,
-          );
-          break;
-        case 'Resource-Relation.tsv':
-          await this.saveObjectInOrder(
-            this.resourceRelationRepository,
-            parsedData,
-          );
-          break;
-        case 'Resource_Rights.tsv':
-          await this.saveObjectInOrder(
-            this.resourceRightRepository,
-            parsedData,
-          );
-          break;
-        case 'Resource-Workflow.tsv':
-          await this.saveObjectInOrder(
-            this.resourceWorkflowRepository,
-            parsedData,
-          );
-          break;
-        case 'Resource.tsv':
-          await this.saveObjectInOrder(this.resourceRepository, parsedData);
-          break;
-        case 'Rights.tsv':
-          await this.saveObjectInOrder(this.rightRepository, parsedData);
-          break;
-        case 'Subject-Resource.tsv':
-          await this.saveObjectInOrder(
-            this.subjectResourceRepository,
-            parsedData,
-          );
-          break;
-        case 'URI_Type.tsv':
-          await this.saveObjectInOrder(this.uriTypeRepository, parsedData);
-          break;
-        case 'Workflow.tsv':
-          await this.saveObjectInOrder(this.workflowRepository, parsedData);
-          break;
-        case 'WorkingGroup.tsv':
-          await this.saveObjectInOrder(this.workingGroupRepository, parsedData);
-          break;
-        default:
-          throw new Error('Invalid file name: ' + file.originalname);
+      if (file.originalname === 'Resource.tsv') {
+        this.buildElasticDocument();
       }
+      // switch (file.originalname) {
+      //   case 'Disciplines.tsv':
+      //     await this.saveObjectInOrder(this.disciplineRepository, parsedData);
+      //     break;
+      //   case 'GORC-attributes.tsv':
+      //     await this.saveObjectInOrder(this.gorcAtributeRepository, parsedData);
+      //     break;
+      //   case 'GORC-Element.tsv':
+      //     await this.saveObjectInOrder(this.gorcElementRepository, parsedData);
+      //     break;
+      //   case 'Group-Group.tsv':
+      //     await this.saveObjectInOrder(this.groupGroupRepository, parsedData);
+      //     break;
+      //   case 'Group-Resource.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.groupResourceRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Individual-GroupAll.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.individualGroupAllRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Individual-Group.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.individualGroupRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Individual-Institution.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.individualInstitutionRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Individual-Member.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.individualMemberRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Individual-Resource.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.individualResourceRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Individual.tsv':
+      //     await this.saveObjectInOrder(this.individualRepository, parsedData);
+      //     break;
+      //   case 'Institution-Country.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.institutionCountryRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Institution-InstitutionRole.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.institutionInstitutionRoleRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Institution-OrganisationType.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.institutionOrganisationTypeRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Institution_Roles.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.institutionRoleRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Institutions.tsv':
+      //     await this.saveObjectInOrder(this.institutionRepository, parsedData);
+      //     break;
+      //   case 'InterestGroup.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.interestGroupRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'OrgType.tsv':
+      //     await this.saveObjectInOrder(this.orgTypeRepository, parsedData);
+      //     break;
+      //   case 'Pathway.tsv':
+      //     await this.saveObjectInOrder(this.pathwayRepository, parsedData);
+      //     break;
+      //   case 'Relation.tsv':
+      //     await this.saveObjectInOrder(this.relationRepository, parsedData);
+      //     break;
+      //   case 'Resource-Disciplines.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.resourceDisciplineRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Resource-GORC-Attribute.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.resourceGORCAttributeRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Resource-GORC-Element.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.resourceGORCElementRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Resource-Pathway.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.resourcePathwayRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Resource-Relation.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.resourceRelationRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Resource_Rights.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.resourceRightRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Resource-Workflow.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.resourceWorkflowRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'Resource.tsv':
+      //     await this.saveObjectInOrder(this.resourceRepository, parsedData);
+      //     break;
+      //   case 'Rights.tsv':
+      //     await this.saveObjectInOrder(this.rightRepository, parsedData);
+      //     break;
+      //   case 'Subject-Resource.tsv':
+      //     await this.saveObjectInOrder(
+      //       this.subjectResourceRepository,
+      //       parsedData,
+      //     );
+      //     break;
+      //   case 'URI_Type.tsv':
+      //     await this.saveObjectInOrder(this.uriTypeRepository, parsedData);
+      //     break;
+      //   case 'Workflow.tsv':
+      //     await this.saveObjectInOrder(this.workflowRepository, parsedData);
+      //     break;
+      //   case 'WorkingGroup.tsv':
+      //     await this.saveObjectInOrder(this.workingGroupRepository, parsedData);
+      //     break;
+      //   default:
+      //     throw new Error('Invalid file name: ' + file.originalname);
+      // }
     }
     const end = performance.now();
     return {
@@ -349,6 +352,50 @@ export class SeedingService {
       filesParsed: fileCount,
       totalItems: totalItems,
     };
+  }
+
+  private async buildElasticDocument() {
+    const resources = await this.resourceRepository.find();
+    const documents = await Promise.all(
+      resources.map(async (resource) => {
+        const subjectResources = await this.subjectResourceRepository.find({
+          where: { uuid_resource: resource.uuid_rda },
+        });
+
+        const uriType = await this.uriTypeRepository.find({
+          where: { uuid_uri_type: resource.uuid_uri_type },
+        });
+
+        const workflowsRelations = await this.resourceWorkflowRepository.find({
+          where: { uuid_resource: resource.uuid_rda },
+        });
+
+        const workflow = await Promise.all(
+          workflowsRelations.map(async (workflowRelation) => {
+            const workflow = await this.workflowRepository.findOne({
+              where: { UUID_Workflow: workflowRelation.uuid_adoption_state },
+            });
+
+            return {
+              ...workflow,
+              status: workflowRelation.status,
+            };
+          }),
+        );
+
+        const rightsResource = await this.resourceRightRepository.find({
+          where: { uuid_resource: resource.uuid_rda },
+        });
+
+        return {
+          ...resource,
+          subjects: subjectResources,
+          uri_type: uriType,
+          workflows: workflow,
+        };
+      }),
+    );
+    console.log(documents.find((doc) => doc.uuid_rda === 'rda_graph:PID_0020'));
   }
 
   private async saveObjectInOrder<T>(
