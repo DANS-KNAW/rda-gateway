@@ -417,6 +417,23 @@ export class SeedingService {
           }),
         );
 
+        const gorcAttributesResource =
+          await this.resourceGORCAttributeRepository.find({
+            where: { uuid_resource: resource.uuid_rda },
+          });
+
+        const gorcAttributes = await Promise.all(
+          gorcAttributesResource.map(async (gorcAttributeResource) => {
+            const gorcAttribute = await this.gorcAtributeRepository.findOne({
+              where: { uuid_attribute: gorcAttributeResource.uuid_Attribute },
+            });
+
+            return {
+              ...gorcAttribute,
+            };
+          }),
+        );
+
         return {
           ...resource,
           subjects: subjectResources,
@@ -424,6 +441,7 @@ export class SeedingService {
           workflows: workflow,
           rights: rights,
           gorc_elements: gorcElements,
+          gorc_attributes: gorcAttributes,
         };
       }),
     );
