@@ -35,6 +35,10 @@ import { URIType } from 'src/entities/uri-type.entity';
 import { Workflow } from 'src/entities/workflow.entity';
 import { WorkingGroup } from 'src/entities/working-group.entity';
 import { Resource } from 'src/resources/entities/resource.entity';
+import { ConfigModule, ConfigService, ConfigType } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import rmqConfig, { CONFIG_RMQ } from 'src/config/rmq.config';
+import { MSG_BROKER_TOKEN } from 'src/constants';
 
 @Module({
   imports: [
@@ -72,6 +76,24 @@ import { Resource } from 'src/resources/entities/resource.entity';
       URIType,
       Workflow,
       WorkingGroup,
+    ]),
+    ClientsModule.registerAsync([
+      {
+        name: MSG_BROKER_TOKEN,
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: async (configService: ConfigService) => {
+          const config =
+            configService.get<ConfigType<typeof rmqConfig>>(CONFIG_RMQ);
+
+          return {
+            transport: Transport.RMQ,
+            options: {
+              urls: [config.connectionUri],
+            },
+          };
+        },
+      },
     ]),
   ],
   controllers: [SeedingController],

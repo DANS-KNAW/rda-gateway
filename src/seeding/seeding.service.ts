@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
-import { plainToClassFromExist, plainToInstance } from 'class-transformer';
 import { parse } from 'csv-parse';
+import { lastValueFrom } from 'rxjs';
+import { MSG_BROKER_TOKEN } from 'src/constants';
 import { Discipline } from 'src/entities/discipline.entity';
 import { GORCAtribute } from 'src/entities/gorc-attribute.entity';
 import { GORCElement } from 'src/entities/gorc-element.entity';
@@ -40,6 +42,9 @@ import { EntityTarget, Repository, getRepository } from 'typeorm';
 @Injectable()
 export class SeedingService {
   constructor(
+    @Inject(MSG_BROKER_TOKEN)
+    private readonly msgBrokerClient: ClientProxy,
+
     @InjectRepository(Discipline)
     private readonly disciplineRepository: Repository<Discipline>,
 
@@ -141,6 +146,21 @@ export class SeedingService {
   ) {}
 
   async ingestTsvFiles(files: Express.Multer.File[]) {
+    const success = await lastValueFrom(
+      this.msgBrokerClient.send({ cmd: 'create-index' }, 'rda'),
+    )
+      .then(() => true)
+      .catch((error: Error) => {
+        if (error.message == 'Alias already exists') {
+          return true;
+        }
+        return false;
+      });
+
+    if (!success) {
+      throw new BadRequestException('Failed to create index');
+    }
+
     const start = performance.now();
     /**
      * 1. Parse the files to JSON.
