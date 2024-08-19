@@ -400,12 +400,30 @@ export class SeedingService {
           }),
         );
 
+        const gorcElementsResource =
+          await this.resourceGORCElementRepository.find({
+            where: { uuid_resource: resource.uuid_rda },
+          });
+
+        const gorcElements = await Promise.all(
+          gorcElementsResource.map(async (gorcElementResource) => {
+            const gorcElement = await this.gorcElementRepository.findOne({
+              where: { uuid_element: gorcElementResource.uuid_element },
+            });
+
+            return {
+              ...gorcElement,
+            };
+          }),
+        );
+
         return {
           ...resource,
           subjects: subjectResources,
           uri_type: uriType,
           workflows: workflow,
           rights: rights,
+          gorc_elements: gorcElements,
         };
       }),
     );
