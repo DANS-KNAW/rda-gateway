@@ -387,11 +387,25 @@ export class SeedingService {
           where: { uuid_resource: resource.uuid_rda },
         });
 
+        const rights = await Promise.all(
+          rightsResource.map(async (rightResource) => {
+            const right = await this.rightRepository.findOne({
+              where: { lod_pid: rightResource.lod_pid },
+            });
+
+            return {
+              ...right,
+              relation: rightResource.relation,
+            };
+          }),
+        );
+
         return {
           ...resource,
           subjects: subjectResources,
           uri_type: uriType,
           workflows: workflow,
+          rights: rights,
         };
       }),
     );
