@@ -434,6 +434,22 @@ export class SeedingService {
           }),
         );
 
+        const disciplinesResource =
+          await this.resourceDisciplineRepository.find({
+            where: { uuid_resource: resource.uuid_rda },
+          });
+
+        const disciplines = await Promise.all(
+          disciplinesResource.map(async (disciplineResource) => {
+            const discipline = await this.disciplineRepository.findOne({
+              where: { list_item: disciplineResource.uuid_disciplines },
+            });
+
+            return {
+              ...discipline,
+            };
+          }),
+        );
         return {
           ...resource,
           subjects: subjectResources,
@@ -442,6 +458,7 @@ export class SeedingService {
           rights: rights,
           gorc_elements: gorcElements,
           gorc_attributes: gorcAttributes,
+          disciplines: disciplines,
         };
       }),
     );
