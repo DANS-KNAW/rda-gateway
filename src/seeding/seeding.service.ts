@@ -484,9 +484,31 @@ export class SeedingService {
           continue;
         }
 
+        const memberOfInstitutions = await this.individualMemberRepository.find(
+          {
+            where: { uuid_individual: individual.uuid_individual },
+          },
+        );
+
+        const institutions = [];
+        for (const memberOfInstitution of memberOfInstitutions) {
+          const institution = await this.institutionRepository.findOne({
+            where: { uuid_institution: memberOfInstitution.uuid_institution },
+          });
+
+          if (institution == null) {
+            continue;
+          }
+
+          institutions.push({
+            ...institution,
+          });
+        }
+
         individuals.push({
           ...individual,
           relation: individualResource.relation,
+          institutions: institutions,
         });
       }
 
