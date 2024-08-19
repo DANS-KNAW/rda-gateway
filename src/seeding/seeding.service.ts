@@ -380,6 +380,10 @@ export class SeedingService {
           where: { UUID_Workflow: workflowRelation.uuid_adoption_state },
         });
 
+        if (workflow == null) {
+          continue;
+        }
+
         workflows.push({
           ...workflow,
           status: workflowRelation.status,
@@ -395,6 +399,10 @@ export class SeedingService {
         const right = await this.rightRepository.findOne({
           where: { lod_pid: rightResource.lod_pid },
         });
+
+        if (right == null) {
+          continue;
+        }
 
         rights.push({
           ...right,
@@ -413,6 +421,10 @@ export class SeedingService {
           where: { uuid_element: gorcElementResource.uuid_element },
         });
 
+        if (gorcElement == null) {
+          continue;
+        }
+
         gorcElements.push({
           ...gorcElement,
         });
@@ -430,6 +442,10 @@ export class SeedingService {
           where: { uuid_attribute: gorcAttributeResource.uuid_Attribute },
         });
 
+        if (gorcAttribute == null) {
+          continue;
+        }
+
         gorcAttributes.push({
           ...gorcAttribute,
         });
@@ -444,6 +460,10 @@ export class SeedingService {
         const discipline = await this.disciplineRepository.findOne({
           where: { list_item: disciplineResource.uuid_disciplines },
         });
+
+        if (discipline == null) {
+          continue;
+        }
 
         disciplines.push({
           ...discipline,
@@ -460,9 +480,45 @@ export class SeedingService {
           where: { uuid_individual: individualResource.uuid_individual },
         });
 
+        if (individual == null) {
+          continue;
+        }
+
         individuals.push({
           ...individual,
           relation: individualResource.relation,
+        });
+      }
+
+      const groupsResouce = await this.groupResourceRepository.find({
+        where: { uuid_resource: resource.uuid_rda },
+      });
+
+      const workingGroups = [];
+      const interestGroups = [];
+      for (const groupResource of groupsResouce) {
+        const workingGroup = await this.workingGroupRepository.findOne({
+          where: { uuid_working_group: groupResource.uuid_group },
+        });
+        if (workingGroup != null) {
+          workingGroups.push({
+            ...workingGroup,
+            relation: groupResource.relation,
+          });
+          continue;
+        }
+
+        const interestGroup = await this.interestGroupRepository.findOne({
+          where: { uuid_interestGroup: groupResource.uuid_group },
+        });
+
+        if (interestGroup == null) {
+          continue;
+        }
+
+        interestGroups.push({
+          ...interestGroup,
+          relation: groupResource.relation,
         });
       }
 
@@ -476,6 +532,8 @@ export class SeedingService {
         gorc_attributes: gorcAttributes,
         disciplines: disciplines,
         individuals: individuals,
+        working_groups: workingGroups,
+        interest_groups: interestGroups,
       });
     }
 
