@@ -146,20 +146,20 @@ export class SeedingService {
   ) {}
 
   async ingestTsvFiles(files: Express.Multer.File[]) {
-    const success = await lastValueFrom(
-      this.msgBrokerClient.send({ cmd: 'create-index' }, 'rda'),
-    )
-      .then(() => true)
-      .catch((error: Error) => {
-        if (error.message == 'Alias already exists') {
-          return true;
-        }
-        return false;
-      });
+    // const success = await lastValueFrom(
+    //   this.msgBrokerClient.send({ cmd: 'create-index' }, 'rda'),
+    // )
+    //   .then(() => true)
+    //   .catch((error: Error) => {
+    //     if (error.message == 'Alias already exists') {
+    //       return true;
+    //     }
+    //     return false;
+    //   });
 
-    if (!success) {
-      throw new BadRequestException('Failed to create index');
-    }
+    // if (!success) {
+    //   throw new BadRequestException('Failed to create index');
+    // }
 
     const start = performance.now();
     /**
@@ -176,11 +176,11 @@ export class SeedingService {
       fileCount++;
       totalItems += parsedData.length;
 
-      console.log({
-        id: fileCount,
-        file: file.originalname,
-        items: parsedData.length,
-      });
+      // console.log({
+      //   id: fileCount,
+      //   file: file.originalname,
+      //   items: parsedData.length,
+      // });
 
       if (file.originalname === 'Resource.tsv') {
         this.buildElasticDocument();
@@ -356,133 +356,130 @@ export class SeedingService {
 
   private async buildElasticDocument() {
     const resources = await this.resourceRepository.find();
-    const documents = await Promise.all(
-      resources.map(async (resource) => {
-        const subjectResources = await this.subjectResourceRepository.find({
+
+    console.log(resources.length);
+
+    const documents = [];
+
+    for (const resource of resources) {
+      const subjectResources = await this.subjectResourceRepository.find({
+        where: { uuid_resource: resource.uuid_rda },
+      });
+
+      const uriType = await this.uriTypeRepository.find({
+        where: { uuid_uri_type: resource.uuid_uri_type },
+      });
+
+      const workflowsRelations = await this.resourceWorkflowRepository.find({
+        where: { uuid_resource: resource.uuid_rda },
+      });
+
+      const workflows = [];
+      for (const workflowRelation of workflowsRelations) {
+        const workflow = await this.workflowRepository.findOne({
+          where: { UUID_Workflow: workflowRelation.uuid_adoption_state },
+        });
+
+        workflows.push({
+          ...workflow,
+          status: workflowRelation.status,
+        });
+      }
+
+      const rightsResource = await this.resourceRightRepository.find({
+        where: { uuid_resource: resource.uuid_rda },
+      });
+
+      const rights = [];
+      for (const rightResource of rightsResource) {
+        const right = await this.rightRepository.findOne({
+          where: { lod_pid: rightResource.lod_pid },
+        });
+
+        rights.push({
+          ...right,
+          relation: rightResource.relation,
+        });
+      }
+
+      const gorcElementsResource =
+        await this.resourceGORCElementRepository.find({
           where: { uuid_resource: resource.uuid_rda },
         });
 
-        const uriType = await this.uriTypeRepository.find({
-          where: { uuid_uri_type: resource.uuid_uri_type },
+      const gorcElements = [];
+      for (const gorcElementResource of gorcElementsResource) {
+        const gorcElement = await this.gorcElementRepository.findOne({
+          where: { uuid_element: gorcElementResource.uuid_element },
         });
 
-        const workflowsRelations = await this.resourceWorkflowRepository.find({
+        gorcElements.push({
+          ...gorcElement,
+        });
+      }
+
+      const gorcAttributesResource =
+        await this.resourceGORCAttributeRepository.find({
           where: { uuid_resource: resource.uuid_rda },
         });
 
-        const workflow = await Promise.all(
-          workflowsRelations.map(async (workflowRelation) => {
-            const workflow = await this.workflowRepository.findOne({
-              where: { UUID_Workflow: workflowRelation.uuid_adoption_state },
-            });
+      const gorcAttributes = [];
 
-            return {
-              ...workflow,
-              status: workflowRelation.status,
-            };
-          }),
-        );
-
-        const rightsResource = await this.resourceRightRepository.find({
-          where: { uuid_resource: resource.uuid_rda },
+      for (const gorcAttributeResource of gorcAttributesResource) {
+        const gorcAttribute = await this.gorcAtributeRepository.findOne({
+          where: { uuid_attribute: gorcAttributeResource.uuid_Attribute },
         });
 
-        const rights = await Promise.all(
-          rightsResource.map(async (rightResource) => {
-            const right = await this.rightRepository.findOne({
-              where: { lod_pid: rightResource.lod_pid },
-            });
+        gorcAttributes.push({
+          ...gorcAttribute,
+        });
+      }
 
-            return {
-              ...right,
-              relation: rightResource.relation,
-            };
-          }),
-        );
+      const disciplinesResource = await this.resourceDisciplineRepository.find({
+        where: { uuid_resource: resource.uuid_rda },
+      });
 
-        const gorcElementsResource =
-          await this.resourceGORCElementRepository.find({
-            where: { uuid_resource: resource.uuid_rda },
-          });
+      const disciplines = [];
+      for (const disciplineResource of disciplinesResource) {
+        const discipline = await this.disciplineRepository.findOne({
+          where: { list_item: disciplineResource.uuid_disciplines },
+        });
 
-        const gorcElements = await Promise.all(
-          gorcElementsResource.map(async (gorcElementResource) => {
-            const gorcElement = await this.gorcElementRepository.findOne({
-              where: { uuid_element: gorcElementResource.uuid_element },
-            });
+        disciplines.push({
+          ...discipline,
+        });
+      }
 
-            return {
-              ...gorcElement,
-            };
-          }),
-        );
+      const individualResources = await this.individualResourceRepository.find({
+        where: { uuid_resource: resource.uuid_rda },
+      });
 
-        const gorcAttributesResource =
-          await this.resourceGORCAttributeRepository.find({
-            where: { uuid_resource: resource.uuid_rda },
-          });
+      const individuals = [];
+      for (const individualResource of individualResources) {
+        const individual = await this.individualRepository.findOne({
+          where: { uuid_individual: individualResource.uuid_individual },
+        });
 
-        const gorcAttributes = await Promise.all(
-          gorcAttributesResource.map(async (gorcAttributeResource) => {
-            const gorcAttribute = await this.gorcAtributeRepository.findOne({
-              where: { uuid_attribute: gorcAttributeResource.uuid_Attribute },
-            });
+        individuals.push({
+          ...individual,
+          relation: individualResource.relation,
+        });
+      }
 
-            return {
-              ...gorcAttribute,
-            };
-          }),
-        );
+      documents.push({
+        ...resource,
+        subjects: subjectResources,
+        uri_type: uriType,
+        workflows: workflows,
+        rights: rights,
+        gorc_elements: gorcElements,
+        gorc_attributes: gorcAttributes,
+        disciplines: disciplines,
+        individuals: individuals,
+      });
+    }
 
-        const disciplinesResource =
-          await this.resourceDisciplineRepository.find({
-            where: { uuid_resource: resource.uuid_rda },
-          });
-
-        const disciplines = await Promise.all(
-          disciplinesResource.map(async (disciplineResource) => {
-            const discipline = await this.disciplineRepository.findOne({
-              where: { list_item: disciplineResource.uuid_disciplines },
-            });
-
-            return {
-              ...discipline,
-            };
-          }),
-        );
-
-        const individualResources =
-          await this.individualResourceRepository.find({
-            where: { uuid_resource: resource.uuid_rda },
-          });
-
-        const individuals = await Promise.all(
-          individualResources.map(async (individualResource) => {
-            const individual = await this.individualRepository.findOne({
-              where: { uuid_individual: individualResource.uuid_individual },
-            });
-
-            return {
-              ...individual,
-              relation: individualResource.relation,
-            };
-          }),
-        );
-
-        return {
-          ...resource,
-          subjects: subjectResources,
-          uri_type: uriType,
-          workflows: workflow,
-          rights: rights,
-          gorc_elements: gorcElements,
-          gorc_attributes: gorcAttributes,
-          disciplines: disciplines,
-          individuals: individuals,
-        };
-      }),
-    );
-    console.log(documents.find((doc) => doc.uuid_rda === 'rda_graph:PID_0020'));
+    console.log(documents[0]);
   }
 
   private async saveObjectInOrder<T>(
