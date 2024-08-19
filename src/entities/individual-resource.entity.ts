@@ -1,8 +1,8 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class IndividualResource {
-  @Column()
+  @PrimaryColumn()
   uuid_individual: string;
 
   @Column()
@@ -14,7 +14,7 @@ export class IndividualResource {
   @Column()
   relation: string;
 
-  @Column()
+  @PrimaryColumn()
   uuid_resource: string;
 
   @Column()
