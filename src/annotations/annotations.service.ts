@@ -13,6 +13,8 @@ import { Discipline } from 'src/entities/discipline.entity';
 import { ResourceDiscipline } from 'src/entities/resource-discipline.entity';
 import { ResourceGORCAttribute } from 'src/entities/resource-gorc-attribute.entity';
 import { GORCAtribute } from 'src/entities/gorc-attribute.entity';
+import { ResourceGORCElement } from 'src/entities/resource-gorc-element.entity';
+import { GORCElement } from 'src/entities/gorc-element.entity';
 
 @Injectable()
 export class AnnotationsService {
@@ -37,6 +39,10 @@ export class AnnotationsService {
     private readonly resourceGORCAttributeRepository: Repository<ResourceGORCAttribute>,
     @InjectRepository(GORCAtribute)
     private readonly gorcAttributeRepository: Repository<GORCAtribute>,
+    @InjectRepository(ResourceGORCElement)
+    private readonly resourceGORCElementRepository: Repository<ResourceGORCElement>,
+    @InjectRepository(GORCElement)
+    private readonly gorcElementRepository: Repository<GORCElement>,
   ) {}
 
   async createAnnotation(createAnnotationDto: CreateAnnotationDto) {
@@ -194,12 +200,39 @@ export class AnnotationsService {
       });
     }
 
+    const gorcElements = [];
+    for (const annotationGORCElement of createAnnotationDto.vocabularies
+      .gorc_elements) {
+      const resourceGORCElement = this.resourceGORCElementRepository.create({
+        element: annotationGORCElement.label,
+        uuid_element: annotationGORCElement.id,
+        resource: resource.title,
+        uuid_resource: resource.uuid_rda,
+      });
+
+      const gorcElement = await this.gorcElementRepository.findOne({
+        where: { uuid_element: resourceGORCElement.uuid_element },
+      });
+
+      if (gorcElement == null) {
+        throw new NotFoundException('GORC Element not found!');
+      }
+
+      await this.resourceGORCElementRepository.save(resourceGORCElement);
+
+      gorcElements.push({
+        ...gorcElement,
+      });
+    }
+
     const document = {
       ...resource,
       interest_groups: interestGroups,
       working_groups: workingGroups,
       pathways: pathways,
       disciplines: disciplines,
+      gorc_elements: gorcElements,
+      gorc_attributes: gorcAttributes,
     };
 
     return 'This action adds a new annotation';
