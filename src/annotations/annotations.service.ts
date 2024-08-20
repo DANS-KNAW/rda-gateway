@@ -11,6 +11,8 @@ import { ResourcePathway } from 'src/entities/resource-pathway.entity';
 import { Pathway } from 'src/entities/pathway.entity';
 import { Discipline } from 'src/entities/discipline.entity';
 import { ResourceDiscipline } from 'src/entities/resource-discipline.entity';
+import { ResourceGORCAttribute } from 'src/entities/resource-gorc-attribute.entity';
+import { GORCAtribute } from 'src/entities/gorc-attribute.entity';
 
 @Injectable()
 export class AnnotationsService {
@@ -31,6 +33,10 @@ export class AnnotationsService {
     private readonly resourceDisciplineRepository: Repository<ResourceDiscipline>,
     @InjectRepository(Discipline)
     private readonly disciplineRepository: Repository<Discipline>,
+    @InjectRepository(ResourceGORCAttribute)
+    private readonly resourceGORCAttributeRepository: Repository<ResourceGORCAttribute>,
+    @InjectRepository(GORCAtribute)
+    private readonly gorcAttributeRepository: Repository<GORCAtribute>,
   ) {}
 
   async createAnnotation(createAnnotationDto: CreateAnnotationDto) {
@@ -158,6 +164,33 @@ export class AnnotationsService {
 
       disciplines.push({
         ...discipline,
+      });
+    }
+
+    const gorcAttributes = [];
+    for (const annotationGORCAttribute of createAnnotationDto.vocabularies
+      .gorc_attributes) {
+      const resourceGORCAttribute = this.resourceGORCAttributeRepository.create(
+        {
+          attribute: annotationGORCAttribute.label,
+          uuid_Attribute: annotationGORCAttribute.id,
+          resource: resource.title,
+          uuid_resource: resource.uuid_rda,
+        },
+      );
+
+      const gorcAttribute = await this.gorcAttributeRepository.findOne({
+        where: { uuid_attribute: resourceGORCAttribute.uuid_Attribute },
+      });
+
+      if (gorcAttribute == null) {
+        throw new NotFoundException('GORC Attribute not found!');
+      }
+
+      await this.resourceGORCAttributeRepository.save(resourceGORCAttribute);
+
+      gorcAttributes.push({
+        ...gorcAttribute,
       });
     }
 
