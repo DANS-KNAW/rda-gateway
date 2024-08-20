@@ -34,11 +34,11 @@ import { SubjectResource } from 'src/entities/subject-resource.entity';
 import { URIType } from 'src/entities/uri-type.entity';
 import { Workflow } from 'src/entities/workflow.entity';
 import { WorkingGroup } from 'src/entities/working-group.entity';
-import { Resource } from 'src/resources/entities/resource.entity';
 import { ConfigModule, ConfigService, ConfigType } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import rmqConfig, { CONFIG_RMQ } from 'src/config/rmq.config';
 import { MSG_BROKER_TOKEN } from 'src/constants';
+import { Resource } from 'src/entities/resource.entity';
 
 @Module({
   imports: [

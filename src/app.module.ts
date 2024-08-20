@@ -7,7 +7,6 @@ import validationSchema from './config/validation-schema';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import rmqConfig, { CONFIG_RMQ } from './config/rmq.config';
 import { MSG_BROKER_TOKEN } from './constants';
-import { ResourcesModule } from './resources/resources.module';
 import dbConfig, { CONFIG_DB } from './config/db.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SeedingModule } from './seeding/seeding.module';
@@ -61,7 +60,6 @@ import { SeedingModule } from './seeding/seeding.module';
         };
       },
     }),
-    ResourcesModule,
     SeedingModule,
   ],
   controllers: [AppController],

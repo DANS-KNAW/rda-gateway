@@ -32,12 +32,12 @@ import { ResourcePathway } from 'src/entities/resource-pathway.entity';
 import { ResourceRelation } from 'src/entities/resource-relation.entity';
 import { ResourceRight } from 'src/entities/resource-right.entity';
 import { ResourceWorkflow } from 'src/entities/resource-workflow.entity';
+import { Resource } from 'src/entities/resource.entity';
 import { Right } from 'src/entities/right.entity';
 import { SubjectResource } from 'src/entities/subject-resource.entity';
 import { URIType } from 'src/entities/uri-type.entity';
 import { Workflow } from 'src/entities/workflow.entity';
 import { WorkingGroup } from 'src/entities/working-group.entity';
-import { Resource } from 'src/resources/entities/resource.entity';
 import { EntityTarget, Repository, getRepository } from 'typeorm';
 
 @Injectable()
@@ -366,7 +366,7 @@ export class SeedingService {
     };
   }
 
-  private async buildElasticDocument() {
+  async buildElasticDocument() {
     const resources = await this.resourceRepository.find();
 
     console.log(resources.length);
