@@ -9,6 +9,8 @@ import { InterestGroup } from 'src/entities/interest-group.entity';
 import { WorkingGroup } from 'src/entities/working-group.entity';
 import { ResourcePathway } from 'src/entities/resource-pathway.entity';
 import { Pathway } from 'src/entities/pathway.entity';
+import { Discipline } from 'src/entities/discipline.entity';
+import { ResourceDiscipline } from 'src/entities/resource-discipline.entity';
 
 @Injectable()
 export class AnnotationsService {
@@ -25,6 +27,10 @@ export class AnnotationsService {
     private readonly resourcePathwayRepository: Repository<ResourcePathway>,
     @InjectRepository(Pathway)
     private readonly pathwayRepository: Repository<Pathway>,
+    @InjectRepository(ResourceDiscipline)
+    private readonly resourceDisciplineRepository: Repository<ResourceDiscipline>,
+    @InjectRepository(Discipline)
+    private readonly disciplineRepository: Repository<Discipline>,
   ) {}
 
   async createAnnotation(createAnnotationDto: CreateAnnotationDto) {
@@ -130,11 +136,37 @@ export class AnnotationsService {
       });
     }
 
+    const disciplines = [];
+    for (const annotationDiscipline of createAnnotationDto.vocabularies
+      .domains) {
+      const ResourceDiscipline = this.resourceDisciplineRepository.create({
+        disciplines: annotationDiscipline.label,
+        uuid_disciplines: annotationDiscipline.id,
+        resource: resource.title,
+        uuid_resource: resource.uuid_rda,
+      });
+
+      const discipline = await this.disciplineRepository.findOne({
+        where: { list_item: ResourceDiscipline.uuid_disciplines },
+      });
+
+      if (discipline == null) {
+        throw new NotFoundException('Discipline not found!');
+      }
+
+      await this.resourceDisciplineRepository.save(ResourceDiscipline);
+
+      disciplines.push({
+        ...discipline,
+      });
+    }
+
     const document = {
       ...resource,
       interest_groups: interestGroups,
       working_groups: workingGroups,
       pathways: pathways,
+      disciplines: disciplines,
     };
 
     return 'This action adds a new annotation';
