@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService, ConfigType } from '@nestjs/config';
 import commonConfig, { COMMON_CONFIG } from './config/common.config';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,7 +12,8 @@ async function bootstrap() {
     configService.get<ConfigType<typeof commonConfig>>(COMMON_CONFIG);
 
   app.enableCors();
-  
+  app.useGlobalPipes(new ValidationPipe());
+
   await app.listen(config.api_port);
 }
 bootstrap();
