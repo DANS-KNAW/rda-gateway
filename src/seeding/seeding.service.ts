@@ -484,16 +484,35 @@ export class SeedingService {
           continue;
         }
 
-        const memberOfInstitutions = await this.individualMemberRepository.find(
-          {
-            where: { uuid_individual: individual.uuid_individual },
-          },
-        );
+        const [memberOfInstitutions, institutionsIndividual] =
+          await Promise.all([
+            this.individualMemberRepository.find({
+              where: { uuid_individual: individual.uuid_individual },
+            }),
+            this.individualInstitutionRepository.find({
+              where: { member: individual.uuid_individual },
+            }),
+          ]);
+
+        const mapToInstitutions = (
+          institution: IndividualMember | IndividualInstitution,
+        ) => ({
+          uuid_institution: institution.uuid_institution,
+          uuid_individual:
+            'uuid_individual' in institution
+              ? institution.uuid_individual
+              : institution.member,
+        });
+
+        const individualInstitutions = [
+          ...memberOfInstitutions,
+          ...institutionsIndividual,
+        ].map(mapToInstitutions);
 
         const institutions = [];
-        for (const memberOfInstitution of memberOfInstitutions) {
+        for (const individualInstitution of individualInstitutions) {
           const institution = await this.institutionRepository.findOne({
-            where: { uuid_institution: memberOfInstitution.uuid_institution },
+            where: { uuid_institution: individualInstitution.uuid_institution },
           });
 
           if (institution == null) {
@@ -559,7 +578,7 @@ export class SeedingService {
       });
     }
 
-    console.log(documents[0]);
+    console.log(documents[0].individuals[0].institutions);
   }
 
   private async saveObjectInOrder<T>(
