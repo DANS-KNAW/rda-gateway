@@ -19,9 +19,12 @@ import { ConfigModule, ConfigService, ConfigType } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import rmqConfig, { CONFIG_RMQ } from 'src/config/rmq.config';
 import { MSG_BROKER_TOKEN } from 'src/constants';
+import { ApiKeyService } from 'src/guards/api-key/api-key.service';
+import commonConfig from 'src/config/common.config';
 
 @Module({
   imports: [
+    ConfigModule.forFeature(commonConfig),
     TypeOrmModule.forFeature([
       Resource,
       GroupResource,
@@ -57,6 +60,6 @@ import { MSG_BROKER_TOKEN } from 'src/constants';
     ]),
   ],
   controllers: [AnnotationsController],
-  providers: [AnnotationsService],
+  providers: [AnnotationsService, ApiKeyService],
 })
 export class AnnotationsModule {}
