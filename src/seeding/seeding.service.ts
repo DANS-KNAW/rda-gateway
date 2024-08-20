@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
+import { log } from 'console';
 import { parse } from 'csv-parse';
 import { lastValueFrom } from 'rxjs';
 import { MSG_BROKER_TOKEN } from 'src/constants';
@@ -474,6 +475,7 @@ export class SeedingService {
         where: { uuid_resource: resource.uuid_rda },
       });
 
+      const resourceInstiutions = [];
       const individuals = [];
       for (const individualResource of individualResources) {
         const individual = await this.individualRepository.findOne({
@@ -554,6 +556,8 @@ export class SeedingService {
             country: country,
           });
         }
+
+        resourceInstiutions.push(...institutions);
 
         const [individualGroups, individualGroupAll] = await Promise.all([
           this.individualGroupRepository.find({
@@ -663,6 +667,31 @@ export class SeedingService {
         });
       }
 
+      const resourceRelations = await this.resourceRelationRepository.find({
+        where: { uuid_resource: resource.uuid_rda },
+      });
+
+      const relations = [];
+      for (const resourceRelation of resourceRelations) {
+        const relation = await this.relationRepository.findOne({
+          where: { uuid_relation: resourceRelation.uuid_relation_type },
+        });
+
+        if (relation == null) {
+          continue;
+        }
+
+        relations.push({
+          ...relation,
+          lod_pid: resourceRelation.lod_pid,
+        });
+      }
+
+      const uniqueInstitutes = resourceInstiutions.filter(
+        (v, i, a) =>
+          a.findIndex((t) => t.uuid_institution === v.uuid_institution) === i,
+      );
+
       documents.push({
         ...resource,
         subjects: subjectResources,
@@ -676,10 +705,12 @@ export class SeedingService {
         working_groups: workingGroups,
         interest_groups: interestGroups,
         pathways: pathways,
+        relations: relations,
+        related_institutions: uniqueInstitutes,
       });
     }
 
-    console.log(documents[181].individuals[0]);
+    console.log(documents[181]);
   }
 
   private async saveObjectInOrder<T>(
