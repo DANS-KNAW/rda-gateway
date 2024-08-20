@@ -5,7 +5,7 @@ export class Resource {
   @Column()
   uuid: string;
 
-  @Column()
+  @Column({ nullable: true })
   uuid_link: string;
 
   @Column()
@@ -23,13 +23,13 @@ export class Resource {
   @Column()
   uri: string;
 
-  @Column()
+  @Column({ nullable: true })
   uri2: string;
 
-  @Column()
+  @Column({ nullable: true })
   pid_lod_type: string;
 
-  @Column()
+  @Column({ nullable: true })
   pid_lod: string;
 
   @Column()
@@ -47,12 +47,12 @@ export class Resource {
   @Column()
   dc_type: string;
 
-  @Column()
+  @Column({ nullable: true })
   card_url: string;
 
   @Column()
   source: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   fragment: string;
 }
