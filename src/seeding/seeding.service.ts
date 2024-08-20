@@ -183,7 +183,7 @@ export class SeedingService {
       // });
 
       if (file.originalname === 'Resource.tsv') {
-        this.buildElasticDocument();
+        await this.buildElasticDocument();
       }
       // switch (file.originalname) {
       //   case 'Disciplines.tsv':
@@ -490,7 +490,7 @@ export class SeedingService {
               where: { uuid_individual: individual.uuid_individual },
             }),
             this.individualInstitutionRepository.find({
-              where: { member: individual.uuid_individual },
+              where: { uuid_rda_member: individual.uuid_individual },
             }),
           ]);
 
@@ -519,8 +519,87 @@ export class SeedingService {
             continue;
           }
 
+          const institutionOrgType =
+            await this.institutionOrganisationTypeRepository.findOne({
+              where: { uuid_institution: institution.uuid_institution },
+            });
+
+          let orgType = null;
+          if (institutionOrgType != null) {
+            orgType = await this.orgTypeRepository.findOne({
+              where: { organisation_type_id: institutionOrgType.uuid_org_type },
+            });
+          }
+
+          const institutionRole =
+            await this.institutionInstitutionRoleRepository.findOne({
+              where: { UUID_Institution: institution.uuid_institution },
+            });
+
+          let role = null;
+          if (institutionRole != null) {
+            role = await this.institutionRoleRepository.findOne({
+              where: { InstitutionRoleID: institutionRole.InstitutionRoleID },
+            });
+          }
+
+          const country = await this.institutionCountryRepository.findOne({
+            where: { uuid_institution: institution.uuid_institution },
+          });
+
           institutions.push({
             ...institution,
+            institution_type: orgType,
+            role: role,
+            country: country,
+          });
+        }
+
+        const [individualGroups, individualGroupAll] = await Promise.all([
+          this.individualGroupRepository.find({
+            where: { uuid_individual: individual.uuid_individual },
+          }),
+          this.individualGroupAllRepository.find({
+            where: { uuid_individual: individual.uuid_individual },
+          }),
+        ]);
+
+        const mapToGroups = (group: IndividualGroup | IndividualGroupAll) => ({
+          uuid_group: group.uuid_group,
+          uuid_individual: group.uuid_individual,
+          member_type:
+            'member_type' in group ? group.member_type : group.relation,
+        });
+
+        const groups = [...individualGroups, ...individualGroupAll].map(
+          mapToGroups,
+        );
+
+        const memberOfGroups = [];
+        for (const group of groups) {
+          const interestGroup = await this.interestGroupRepository.findOne({
+            where: { uuid_interestGroup: group.uuid_group },
+          });
+
+          if (interestGroup != null) {
+            memberOfGroups.push({
+              ...interestGroup,
+              member_type: group.member_type,
+            });
+            continue;
+          }
+
+          const workingGroup = await this.workingGroupRepository.findOne({
+            where: { uuid_working_group: group.uuid_group },
+          });
+
+          if (workingGroup == null) {
+            continue;
+          }
+
+          memberOfGroups.push({
+            ...workingGroup,
+            member_type: group.member_type,
           });
         }
 
@@ -528,6 +607,7 @@ export class SeedingService {
           ...individual,
           relation: individualResource.relation,
           institutions: institutions,
+          groups: memberOfGroups,
         });
       }
 
@@ -563,6 +643,26 @@ export class SeedingService {
         });
       }
 
+      const pathwaysResource = await this.resourcePathwayRepository.find({
+        where: { uuid_resource: resource.uuid_rda },
+      });
+
+      const pathways = [];
+      for (const pathwayResource of pathwaysResource) {
+        const pathway = await this.pathwayRepository.findOne({
+          where: { uuid_pathway: pathwayResource.uuid_pathway },
+        });
+
+        if (pathway == null) {
+          continue;
+        }
+
+        pathways.push({
+          ...pathway,
+          relation: pathwayResource.relation,
+        });
+      }
+
       documents.push({
         ...resource,
         subjects: subjectResources,
@@ -575,10 +675,11 @@ export class SeedingService {
         individuals: individuals,
         working_groups: workingGroups,
         interest_groups: interestGroups,
+        pathways: pathways,
       });
     }
 
-    console.log(documents[0].individuals[0].institutions);
+    console.log(documents[181].individuals[0]);
   }
 
   private async saveObjectInOrder<T>(
