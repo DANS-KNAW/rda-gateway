@@ -10,6 +10,8 @@ async function bootstrap() {
   const config =
     configService.get<ConfigType<typeof commonConfig>>(COMMON_CONFIG);
 
+  app.enableCors();
+  
   await app.listen(config.api_port);
 }
 bootstrap();
