@@ -7,6 +7,8 @@ import { In, Repository } from 'typeorm';
 import { GroupResource } from 'src/entities/group-resource.entity';
 import { InterestGroup } from 'src/entities/interest-group.entity';
 import { WorkingGroup } from 'src/entities/working-group.entity';
+import { ResourcePathway } from 'src/entities/resource-pathway.entity';
+import { Pathway } from 'src/entities/pathway.entity';
 
 @Injectable()
 export class AnnotationsService {
@@ -19,6 +21,10 @@ export class AnnotationsService {
     private readonly interestGroupRepository: Repository<InterestGroup>,
     @InjectRepository(WorkingGroup)
     private readonly workingGroupRepository: Repository<WorkingGroup>,
+    @InjectRepository(ResourcePathway)
+    private readonly resourcePathwayRepository: Repository<ResourcePathway>,
+    @InjectRepository(Pathway)
+    private readonly pathwayRepository: Repository<Pathway>,
   ) {}
 
   async createAnnotation(createAnnotationDto: CreateAnnotationDto) {
@@ -97,10 +103,38 @@ export class AnnotationsService {
       });
     }
 
+    const pathways = [];
+    for (const annotationPathway of createAnnotationDto.vocabularies.pathways) {
+      const ResourcePathway = this.resourcePathwayRepository.create({
+        pathway: annotationPathway.label,
+        uuid_pathway: annotationPathway.id,
+        relation_uuid: 'rda_graph:E8904E44',
+        relation: 'supports',
+        resource: resource.title,
+        uuid_resource: resource.uuid_rda,
+      });
+
+      const pathway = await this.pathwayRepository.findOne({
+        where: { uuid_pathway: ResourcePathway.uuid_pathway },
+      });
+
+      if (pathway == null) {
+        throw new NotFoundException('Pathway not found!');
+      }
+
+      await this.resourcePathwayRepository.save(ResourcePathway);
+
+      pathways.push({
+        ...pathway,
+        relation: ResourcePathway.relation,
+      });
+    }
+
     const document = {
       ...resource,
       interest_groups: interestGroups,
       working_groups: workingGroups,
+      pathways: pathways,
     };
 
     return 'This action adds a new annotation';
