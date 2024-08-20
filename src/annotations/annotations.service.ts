@@ -3,9 +3,10 @@ import { CreateAnnotationDto } from './dto/create-annotation.dto';
 import { Resource } from 'src/entities/resource.entity';
 import { customAlphabet } from 'nanoid';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { GroupResource } from 'src/entities/group-resource.entity';
 import { InterestGroup } from 'src/entities/interest-group.entity';
+import { WorkingGroup } from 'src/entities/working-group.entity';
 
 @Injectable()
 export class AnnotationsService {
@@ -16,6 +17,8 @@ export class AnnotationsService {
     private readonly groupResourceRepository: Repository<GroupResource>,
     @InjectRepository(InterestGroup)
     private readonly interestGroupRepository: Repository<InterestGroup>,
+    @InjectRepository(WorkingGroup)
+    private readonly workingGroupRepository: Repository<WorkingGroup>,
   ) {}
 
   async createAnnotation(createAnnotationDto: CreateAnnotationDto) {
@@ -38,9 +41,9 @@ export class AnnotationsService {
 
     await this.resourceRepository.save(resource);
 
-
-    const interestGroups = []
-    for (const annotationIG of createAnnotationDto.vocabularies.interest_groups) {
+    const interestGroups = [];
+    for (const annotationIG of createAnnotationDto.vocabularies
+      .interest_groups) {
       const groupResource = this.groupResourceRepository.create({
         relation: 'wgLink',
         relation_uuid: 'rda_graph:T0ZC84O2',
@@ -55,20 +58,49 @@ export class AnnotationsService {
       });
 
       if (interestGroup == null) {
-        throw new NotFoundException("Interest Group not found!");
+        throw new NotFoundException('Interest Group not found!');
       }
 
       await this.groupResourceRepository.save(groupResource);
 
       interestGroups.push({
         ...interestGroup,
-        relation: groupResource.relation
-      })
+        relation: groupResource.relation,
+      });
+    }
+
+    const workingGroups = [];
+    for (const annotationWG of createAnnotationDto.vocabularies
+      .working_groups) {
+      const groupResource = this.groupResourceRepository.create({
+        relation: 'wgLink',
+        relation_uuid: 'rda_graph:T0ZC84O2',
+        title_group: annotationWG.label,
+        uuid_group: annotationWG.id,
+        title_resource: resource.title,
+        uuid_resource: resource.uuid_rda,
+      });
+
+      const workingGroup = await this.workingGroupRepository.findOne({
+        where: { uuid_working_group: groupResource.uuid_group },
+      });
+
+      if (workingGroup == null) {
+        throw new NotFoundException('Working Group not found!');
+      }
+
+      await this.groupResourceRepository.save(groupResource);
+
+      workingGroups.push({
+        ...workingGroup,
+        relation: groupResource.relation,
+      });
     }
 
     const document = {
       ...resource,
       interest_groups: interestGroups,
+      working_groups: workingGroups,
     };
 
     return 'This action adds a new annotation';
