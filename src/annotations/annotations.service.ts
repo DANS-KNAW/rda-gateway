@@ -164,7 +164,7 @@ export class AnnotationsService {
     const disciplines = [];
     for (const annotationDiscipline of createAnnotationDto.vocabularies
       .domains) {
-      const ResourceDiscipline = this.resourceDisciplineRepository.create({
+      const resourceDiscipline = this.resourceDisciplineRepository.create({
         disciplines: annotationDiscipline.label,
         uuid_disciplines: annotationDiscipline.id,
         resource: resource.title,
@@ -172,14 +172,14 @@ export class AnnotationsService {
       });
 
       const discipline = await this.disciplineRepository.findOne({
-        where: { list_item: ResourceDiscipline.uuid_disciplines },
+        where: { uuid: resourceDiscipline.uuid_disciplines },
       });
 
       if (discipline == null) {
         throw new NotFoundException('Discipline not found!');
       }
 
-      await this.resourceDisciplineRepository.save(ResourceDiscipline);
+      await this.resourceDisciplineRepository.save(resourceDiscipline);
 
       disciplines.push({
         ...discipline,
