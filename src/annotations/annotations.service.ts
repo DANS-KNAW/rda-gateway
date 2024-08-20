@@ -1,15 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAnnotationDto } from './dto/create-annotation.dto';
 import { Resource } from 'src/entities/resource.entity';
 import { customAlphabet } from 'nanoid';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { GroupResource } from 'src/entities/group-resource.entity';
+import { InterestGroup } from 'src/entities/interest-group.entity';
 
 @Injectable()
 export class AnnotationsService {
   constructor(
     @InjectRepository(Resource)
     private readonly resourceRepository: Repository<Resource>,
+    @InjectRepository(GroupResource)
+    private readonly groupResourceRepository: Repository<GroupResource>,
+    @InjectRepository(InterestGroup)
+    private readonly interestGroupRepository: Repository<InterestGroup>,
   ) {}
 
   async createAnnotation(createAnnotationDto: CreateAnnotationDto) {
@@ -32,8 +38,37 @@ export class AnnotationsService {
 
     await this.resourceRepository.save(resource);
 
+
+    const interestGroups = []
+    for (const annotationIG of createAnnotationDto.vocabularies.interest_groups) {
+      const groupResource = this.groupResourceRepository.create({
+        relation: 'wgLink',
+        relation_uuid: 'rda_graph:T0ZC84O2',
+        title_group: annotationIG.label,
+        uuid_group: annotationIG.id,
+        title_resource: resource.title,
+        uuid_resource: resource.uuid_rda,
+      });
+
+      const interestGroup = await this.interestGroupRepository.findOne({
+        where: { uuid_interestGroup: groupResource.uuid_group },
+      });
+
+      if (interestGroup == null) {
+        throw new NotFoundException("Interest Group not found!");
+      }
+
+      await this.groupResourceRepository.save(groupResource);
+
+      interestGroups.push({
+        ...interestGroup,
+        relation: groupResource.relation
+      })
+    }
+
     const document = {
       ...resource,
+      interest_groups: interestGroups,
     };
 
     return 'This action adds a new annotation';
