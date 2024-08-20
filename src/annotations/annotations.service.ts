@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAnnotationDto } from './dto/create-annotation.dto';
 import { Resource } from 'src/entities/resource.entity';
 import { customAlphabet } from 'nanoid';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { GroupResource } from 'src/entities/group-resource.entity';
 import { InterestGroup } from 'src/entities/interest-group.entity';
 import { WorkingGroup } from 'src/entities/working-group.entity';
@@ -16,6 +16,9 @@ import { GORCAtribute } from 'src/entities/gorc-attribute.entity';
 import { ResourceGORCElement } from 'src/entities/resource-gorc-element.entity';
 import { GORCElement } from 'src/entities/gorc-element.entity';
 import { URIType } from 'src/entities/uri-type.entity';
+import { lastValueFrom } from 'rxjs';
+import { MSG_BROKER_TOKEN } from 'src/constants';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AnnotationsService {
@@ -46,10 +49,17 @@ export class AnnotationsService {
     private readonly gorcElementRepository: Repository<GORCElement>,
     @InjectRepository(URIType)
     private readonly uriTypeRepository: Repository<URIType>,
+    @Inject(MSG_BROKER_TOKEN)
+    private readonly msgBrokerClient: ClientProxy,
   ) {}
 
   async createAnnotation(createAnnotationDto: CreateAnnotationDto) {
     const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXZ');
+
+    const convertDate = (date: string) => {
+      const [year, month, day] = date.split('-');
+      return `${day}-${month}-${year}`;
+    };
 
     const resource = this.resourceRepository.create();
     resource.uuid = createAnnotationDto.page_url;
@@ -58,7 +68,7 @@ export class AnnotationsService {
     resource.title = createAnnotationDto.citation.title;
     resource.notes = createAnnotationDto.citation.notes;
     resource.uri = createAnnotationDto.page_url;
-    // resource.dc_date = date;
+    resource.dc_date = convertDate(createAnnotationDto.citation.created_at);
     resource.dc_description = createAnnotationDto.citation.description;
     resource.dc_language = createAnnotationDto.citation.language.value;
     resource.type = 'publication-other';
@@ -243,6 +253,13 @@ export class AnnotationsService {
       uri_type: uriType,
     };
 
-    return 'This action adds a new annotation';
+    const response = await lastValueFrom(
+      this.msgBrokerClient.send(
+        { cmd: 'index-document' },
+        { alias: 'rda', body: document, customId: 'uuid_rda' },
+      ),
+    );
+
+    return response;
   }
 }
