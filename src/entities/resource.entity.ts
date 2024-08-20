@@ -52,4 +52,7 @@ export class Resource {
 
   @Column()
   source: string;
+
+  @Column({nullable: true})
+  fragment: string;
 }
