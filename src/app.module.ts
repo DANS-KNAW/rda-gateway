@@ -10,6 +10,7 @@ import { MSG_BROKER_TOKEN } from './constants';
 import dbConfig, { CONFIG_DB } from './config/db.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SeedingModule } from './seeding/seeding.module';
+import { AnnotationsModule } from './annotations/annotations.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { SeedingModule } from './seeding/seeding.module';
       },
     }),
     SeedingModule,
+    AnnotationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
