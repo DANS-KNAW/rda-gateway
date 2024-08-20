@@ -15,6 +15,7 @@ import { ResourceGORCAttribute } from 'src/entities/resource-gorc-attribute.enti
 import { GORCAtribute } from 'src/entities/gorc-attribute.entity';
 import { ResourceGORCElement } from 'src/entities/resource-gorc-element.entity';
 import { GORCElement } from 'src/entities/gorc-element.entity';
+import { URIType } from 'src/entities/uri-type.entity';
 
 @Injectable()
 export class AnnotationsService {
@@ -43,6 +44,8 @@ export class AnnotationsService {
     private readonly resourceGORCElementRepository: Repository<ResourceGORCElement>,
     @InjectRepository(GORCElement)
     private readonly gorcElementRepository: Repository<GORCElement>,
+    @InjectRepository(URIType)
+    private readonly uriTypeRepository: Repository<URIType>,
   ) {}
 
   async createAnnotation(createAnnotationDto: CreateAnnotationDto) {
@@ -225,6 +228,10 @@ export class AnnotationsService {
       });
     }
 
+    const uriType = await this.uriTypeRepository.find({
+      where: { uri_type: resource.uuid_uri_type },
+    });
+
     const document = {
       ...resource,
       interest_groups: interestGroups,
@@ -233,6 +240,7 @@ export class AnnotationsService {
       disciplines: disciplines,
       gorc_elements: gorcElements,
       gorc_attributes: gorcAttributes,
+      uri_type: uriType,
     };
 
     return 'This action adds a new annotation';
