@@ -22,12 +22,14 @@ import { InstitutionOrganisationType } from 'src/entities/institution-organisati
 import { InstitutionRole } from 'src/entities/institution-role.entity';
 import { Institution } from 'src/entities/institution.entity';
 import { InterestGroup } from 'src/entities/interest-group.entity';
+import { Keyword } from 'src/entities/keyword.entity';
 import { OrgType } from 'src/entities/org-type.entity';
 import { Pathway } from 'src/entities/pathway.entity';
 import { Relation } from 'src/entities/relation.entity';
 import { ResourceDiscipline } from 'src/entities/resource-discipline.entity';
 import { ResourceGORCAttribute } from 'src/entities/resource-gorc-attribute.entity';
 import { ResourceGORCElement } from 'src/entities/resource-gorc-element.entity';
+import { ResourceKeyword } from 'src/entities/resource-keyword.entity';
 import { ResourcePathway } from 'src/entities/resource-pathway.entity';
 import { ResourceRelation } from 'src/entities/resource-relation.entity';
 import { ResourceRight } from 'src/entities/resource-right.entity';
@@ -97,6 +99,9 @@ export class SeedingService {
     @InjectRepository(InterestGroup)
     private readonly interestGroupRepository: Repository<InterestGroup>,
 
+    @InjectRepository(Keyword)
+    private readonly keywordRepository: Repository<Keyword>,
+
     @InjectRepository(OrgType)
     private readonly orgTypeRepository: Repository<OrgType>,
 
@@ -114,6 +119,9 @@ export class SeedingService {
 
     @InjectRepository(ResourceGORCElement)
     private readonly resourceGORCElementRepository: Repository<ResourceGORCElement>,
+
+    @InjectRepository(ResourceKeyword)
+    private readonly resourceKeywordRepository: Repository<ResourceKeyword>,
 
     @InjectRepository(ResourcePathway)
     private readonly resourcePathwayRepository: Repository<ResourcePathway>,
@@ -273,6 +281,9 @@ export class SeedingService {
         case 'OrgType.tsv':
           await this.saveObjectInOrder(this.orgTypeRepository, parsedData);
           break;
+        case 'Keywords.tsv':
+          await this.saveObjectInOrder(this.keywordRepository, parsedData);
+          break;
         case 'Pathway.tsv':
           await this.saveObjectInOrder(this.pathwayRepository, parsedData);
           break;
@@ -294,6 +305,12 @@ export class SeedingService {
         case 'Resource-GORC-Element.tsv':
           await this.saveObjectInOrder(
             this.resourceGORCElementRepository,
+            parsedData,
+          );
+          break;
+        case 'Resource-Keywords.tsv':
+          await this.saveObjectInOrder(
+            this.resourceKeywordRepository,
             parsedData,
           );
           break;
@@ -368,11 +385,7 @@ export class SeedingService {
 
   async buildElasticDocument() {
     const resources = await this.resourceRepository.find();
-
-    console.log(resources.length);
-
     const documents = [];
-
     for (const resource of resources) {
       const subjectResources = await this.subjectResourceRepository.find({
         where: { uuid_resource: resource.uuid_rda },
@@ -698,6 +711,25 @@ export class SeedingService {
         });
       }
 
+      const resourceKeywords = await this.resourceKeywordRepository.find({
+        where: { uuid_resource: resource.uuid_rda },
+      });
+
+      const keywords = [];
+      for (const resourceKeyword of resourceKeywords) {
+        const keyword = await this.keywordRepository.findOne({
+          where: { uuid_keyword: resourceKeyword.uuid_keyword },
+        });
+
+        if (keyword == null) {
+          continue;
+        }
+
+        keywords.push({
+          ...keyword,
+        });
+      }
+
       const uniqueInstitutes = resourceInstiutions.filter(
         (v, i, a) =>
           a.findIndex((t) => t.uuid_institution === v.uuid_institution) === i,
@@ -718,6 +750,7 @@ export class SeedingService {
         pathways: pathways,
         relations: relations,
         related_institutions: uniqueInstitutes,
+        keywords: keywords,
       });
     }
 

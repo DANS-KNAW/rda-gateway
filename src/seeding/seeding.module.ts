@@ -39,6 +39,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import rmqConfig, { CONFIG_RMQ } from 'src/config/rmq.config';
 import { MSG_BROKER_TOKEN } from 'src/constants';
 import { Resource } from 'src/entities/resource.entity';
+import { ResourceKeyword } from 'src/entities/resource-keyword.entity';
+import { Keyword } from 'src/entities/keyword.entity';
 
 @Module({
   imports: [
@@ -60,12 +62,14 @@ import { Resource } from 'src/entities/resource.entity';
       InstitutionRole,
       Institution,
       InterestGroup,
+      Keyword,
       OrgType,
       Pathway,
       Relation,
       ResourceDiscipline,
       ResourceGORCAttribute,
       ResourceGORCElement,
+      ResourceKeyword,
       ResourcePathway,
       ResourceRelation,
       ResourceRight,
