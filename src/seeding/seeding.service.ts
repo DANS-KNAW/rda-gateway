@@ -1,8 +1,10 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { parse } from 'csv-parse';
 import { lastValueFrom } from 'rxjs';
+import commonConfig from 'src/config/common.config';
 import { MSG_BROKER_TOKEN } from 'src/constants';
 import { Discipline } from 'src/entities/discipline.entity';
 import { GORCAtribute } from 'src/entities/gorc-attribute.entity';
@@ -44,6 +46,9 @@ import { Repository } from 'typeorm';
 @Injectable()
 export class SeedingService {
   constructor(
+    @Inject(commonConfig.KEY)
+    private readonly config: ConfigType<typeof commonConfig>,
+
     @Inject(MSG_BROKER_TOKEN)
     private readonly msgBrokerClient: ClientProxy,
 
@@ -154,18 +159,31 @@ export class SeedingService {
   ) {}
 
   async ingestTsvFiles(files: Express.Multer.File[]) {
+    const mappings = {
+      properties: {
+        dc_date: {
+          type: 'date',
+          format:
+            'dd-MM-yyyy||d-M-yyyy||dd-M-yyyy||d-MM-yyyy||strict_date_optional_time||epoch_millis',
+        },
+        dc_type: { type: 'keyword' },
+      },
+      // runtime: {
+      //   human_readable_dc_type: {
+      //     type: 'keyword',
+      //     script: {
+      //       source: "emit(doc['dc_type'].value.lowercase())",
+      //     },
+      //   },
+      // },
+    };
+
     const success = await lastValueFrom(
       this.msgBrokerClient.send(
         { cmd: 'create-index' },
         {
-          alias: 'rda',
-          properties: {
-            dc_date: {
-              type: 'date',
-              format:
-                'dd-MM-yyyy||d-M-yyyy||dd-M-yyyy||d-MM-yyyy||strict_date_optional_time||epoch_millis',
-            },
-          },
+          alias: this.config.elastic_index,
+          mappings,
         },
       ),
     )
@@ -369,7 +387,7 @@ export class SeedingService {
       await lastValueFrom(
         this.msgBrokerClient.send(
           { cmd: 'index-document' },
-          { alias: 'rda', body: document, customId: 'uuid_rda' },
+          { alias: this.config.elastic_index, body: document, customId: 'uuid_rda' },
         ),
       );
     }
@@ -697,7 +715,7 @@ export class SeedingService {
       const relations = [];
       for (const resourceRelation of resourceRelations) {
         const relation = await this.relationRepository.findOne({
-          where: { uuid_relation: resourceRelation.uuid_relation_type },
+          where: { uuid_relation_type: resourceRelation.uuid_relation_type },
         });
 
         if (relation == null) {

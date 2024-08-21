@@ -41,9 +41,11 @@ import { MSG_BROKER_TOKEN } from 'src/constants';
 import { Resource } from 'src/entities/resource.entity';
 import { ResourceKeyword } from 'src/entities/resource-keyword.entity';
 import { Keyword } from 'src/entities/keyword.entity';
+import commonConfig from 'src/config/common.config';
 
 @Module({
   imports: [
+    ConfigModule.forFeature(commonConfig),
     TypeOrmModule.forFeature([
       Discipline,
       GORCAtribute,
