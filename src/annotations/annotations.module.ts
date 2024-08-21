@@ -21,6 +21,8 @@ import rmqConfig, { CONFIG_RMQ } from 'src/config/rmq.config';
 import { MSG_BROKER_TOKEN } from 'src/constants';
 import { ApiKeyService } from 'src/guards/api-key/api-key.service';
 import commonConfig from 'src/config/common.config';
+import { ResourceKeyword } from 'src/entities/resource-keyword.entity';
+import { Keyword } from 'src/entities/keyword.entity';
 
 @Module({
   imports: [
@@ -39,6 +41,8 @@ import commonConfig from 'src/config/common.config';
       ResourceGORCElement,
       GORCElement,
       URIType,
+      ResourceKeyword,
+      Keyword,
     ]),
     ClientsModule.registerAsync([
       {

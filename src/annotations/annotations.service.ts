@@ -19,6 +19,8 @@ import { URIType } from 'src/entities/uri-type.entity';
 import { lastValueFrom } from 'rxjs';
 import { MSG_BROKER_TOKEN } from 'src/constants';
 import { ClientProxy } from '@nestjs/microservices';
+import { ResourceKeyword } from 'src/entities/resource-keyword.entity';
+import { Keyword } from 'src/entities/keyword.entity';
 
 @Injectable()
 export class AnnotationsService {
@@ -49,6 +51,10 @@ export class AnnotationsService {
     private readonly gorcElementRepository: Repository<GORCElement>,
     @InjectRepository(URIType)
     private readonly uriTypeRepository: Repository<URIType>,
+    @InjectRepository(ResourceKeyword)
+    private readonly resourceKeywordRepository: Repository<ResourceKeyword>,
+    @InjectRepository(Keyword)
+    private readonly keywordRepository: Repository<Keyword>,
     @Inject(MSG_BROKER_TOKEN)
     private readonly msgBrokerClient: ClientProxy,
   ) {}
@@ -242,6 +248,36 @@ export class AnnotationsService {
       where: { uri_type: resource.uuid_uri_type },
     });
 
+    const keywords = [];
+    for (const annotationKeyword of createAnnotationDto.vocabularies.keywords) {
+      let newKeywordUuid = `rda_tiger:${nanoid()}`;
+
+      const resourceKeyword = this.resourceKeywordRepository.create({
+        uuid_keyword: annotationKeyword.id,
+        uuid_resource: resource.uuid_rda,
+      });
+
+      let keyword = await this.keywordRepository.findOne({
+        where: { keyword: annotationKeyword.label },
+      });
+
+      if (keyword == null) {
+        keyword = await this.keywordRepository.save({
+          keyword: annotationKeyword.label,
+          uuid_keyword: newKeywordUuid,
+        });
+        resourceKeyword.uuid_keyword = newKeywordUuid;
+      } else {
+        resourceKeyword.uuid_keyword = keyword.uuid_keyword;
+      }
+
+      await this.resourceKeywordRepository.save(resourceKeyword);
+
+      keywords.push({
+        ...keyword,
+      });
+    }
+
     const document = {
       ...resource,
       interest_groups: interestGroups,
@@ -251,6 +287,7 @@ export class AnnotationsService {
       gorc_elements: gorcElements,
       gorc_attributes: gorcAttributes,
       uri_type: uriType,
+      keywords: keywords,
     };
 
     const response = await lastValueFrom(

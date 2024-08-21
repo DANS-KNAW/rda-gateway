@@ -1,47 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsOptional, IsString, ValidateNested } from 'class-validator';
 
-export type vocab = {
-  id: string;
-  label: string;
-  value: string;
-  description?: string;
-  url?: string;
-};
-
-// export class Annotation {
-//   @IsString()
-//   page_url: string;
-
-//   @IsString()
-//   annotation: string;
-
-//   @IsString()
-//   uritype: string;
-
-//   citation: {
-//     title: string;
-//     description?: string;
-//     notes?: string;
-//     submitter?: string;
-//     language: {
-//       id: string;
-//       label: string;
-//       value: string;
-//     };
-//     created_at: string;
-//     resource?: string;
-//   };
-//   vocabularies: {
-//     pathways?: vocab[];
-//     gorc_attributes?: vocab[];
-//     gorc_elements?: vocab[];
-//     working_groups?: vocab[];
-//     interest_groups?: vocab[];
-//     domains?: vocab[];
-//   };
-// }
-
 class Language {
   @IsString()
   id: string;
@@ -130,6 +89,11 @@ class Vocabularies {
   @ValidateNested({ each: true })
   @Type(() => Vocab)
   domains?: Vocab[];
+
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => Vocab)
+  keywords?: Vocab[];
 }
 
 export class Annotation {
