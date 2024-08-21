@@ -1,7 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
-import { log } from 'console';
 import { parse } from 'csv-parse';
 import { lastValueFrom } from 'rxjs';
 import { MSG_BROKER_TOKEN } from 'src/constants';
@@ -40,7 +39,7 @@ import { SubjectResource } from 'src/entities/subject-resource.entity';
 import { URIType } from 'src/entities/uri-type.entity';
 import { Workflow } from 'src/entities/workflow.entity';
 import { WorkingGroup } from 'src/entities/working-group.entity';
-import { EntityTarget, Repository, getRepository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class SeedingService {

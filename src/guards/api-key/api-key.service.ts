@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { valid } from 'joi';
 import commonConfig from 'src/config/common.config';
 
 @Injectable()

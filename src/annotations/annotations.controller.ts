@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { AnnotationsService } from './annotations.service';
 import { CreateAnnotationDto } from './dto/create-annotation.dto';
 import { ApiKeyGuard } from 'src/guards/api-key/api-key.guard';
@@ -19,7 +10,6 @@ export class AnnotationsController {
   @UseGuards(ApiKeyGuard)
   @Post()
   createAnnotation(@Body() createAnnotationDto: CreateAnnotationDto) {
-    // return this.annotationsService.createAnnotation(createAnnotationDto);
-    return "Test"
+    return this.annotationsService.createAnnotation(createAnnotationDto);
   }
 }

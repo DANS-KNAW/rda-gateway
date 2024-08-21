@@ -18,7 +18,9 @@ export class SeedingController {
   ingestData(
     @UploadedFiles(
       new ParseFilePipe({
-        validators: [new FileTypeValidator({ fileType: 'text/tab-separated-values' })],
+        validators: [
+          new FileTypeValidator({ fileType: 'text/tab-separated-values' }),
+        ],
       }),
     )
     files: Array<Express.Multer.File>,
@@ -26,4 +28,3 @@ export class SeedingController {
     return this.seedingService.ingestTsvFiles(files);
   }
 }
-
