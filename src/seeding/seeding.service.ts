@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -45,6 +45,8 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class SeedingService {
+  private readonly logger = new Logger(SeedingService.name);
+
   constructor(
     @Inject(commonConfig.KEY)
     private readonly config: ConfigType<typeof commonConfig>,
@@ -204,6 +206,7 @@ export class SeedingService {
     let fileCount = 0;
     let totalItems = 0;
     for (const file of files) {
+      this.logger.log('Ingesting file: ' + file.originalname);
       const cleanedBuffer = this.preprocessBuffer(file.buffer);
       const parsedData = await this.parseCsvBuffer(cleanedBuffer);
 
@@ -380,6 +383,8 @@ export class SeedingService {
           throw new Error('Invalid file name: ' + file.originalname);
       }
     }
+
+    this.logger.log('Finished ingesting files');
 
     const documents = await this.buildElasticDocument();
 
