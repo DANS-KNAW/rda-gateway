@@ -89,3 +89,13 @@ $ pnpm run test:e2e
 # test coverage
 $ pnpm run test:cov
 ```
+
+### Seeding
+The project includes a rda.zip simply unzip in a directory like `csv` and then run the following command:
+
+
+note: Don't forget to replace the <PATH_TO_PROJECT> in the command.
+
+```
+curl -X POST http://localhost:3000/seeding -H "Content-Type: multipart/form-data" $(find <PATH_TO_PROJECT>/IST-rda-storage-service/csv -type f -exec echo -n '-F files=@{};type=text/tab-separated-values ' \;)
+```
