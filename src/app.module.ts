@@ -17,11 +17,11 @@ import { AnnotationsModule } from './annotations/annotations.module';
     ConfigModule.forRoot({
       isGlobal: false,
       envFilePath: ['.env.local', '.env.development', '.env.production'],
-      ignoreEnvVars: true,
+      ignoreEnvVars: false,
       load: [commonConfig, rmqConfig, dbConfig],
       validationSchema,
       validationOptions: {
-        allowUnknown: false,
+        allowUnknown: true,
         abortEarly: true,
       },
     }),
