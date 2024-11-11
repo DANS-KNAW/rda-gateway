@@ -191,6 +191,7 @@ export class SeedingService {
     )
       .then(() => true)
       .catch((error: Error) => {
+        this.logger.error(error)
         if (error.message == 'Alias already exists') {
           return true;
         }

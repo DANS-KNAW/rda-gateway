@@ -13,6 +13,8 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe());
 
+  app.enableCors()
+
   await app.listen(config.api_port);
 }
 bootstrap();
