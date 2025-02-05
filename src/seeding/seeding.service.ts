@@ -185,27 +185,31 @@ export class SeedingService {
       // },
     };
 
-    // const success = await lastValueFrom(
-    //   this.msgBrokerClient.send(
-    //     { cmd: 'create-index' },
-    //     {
-    //       alias: this.config.elastic_index,
-    //       mappings,
-    //     },
-    //   ),
-    // )
-    //   .then(() => true)
-    //   .catch((error: Error) => {
-    //     this.logger.error(error)
-    //     if (error.message == 'Alias already exists') {
-    //       return true;
-    //     }
-    //     return false;
-    //   });
+    const success = await lastValueFrom(
+      this.msgBrokerClient.send(
+        { cmd: 'create-index' },
+        {
+          alias: this.config.elastic_index,
+          mappings,
+        },
+      ),
+    )
+      .then(() => {
+        this.logger.log('Index created');
+        return true;
+      })
+      .catch((error: Error) => {
+        this.logger.error(error);
+        if (error.message == 'Alias already exists') {
+          this.logger.log('Alias already exists');
+          return true;
+        }
+        return false;
+      });
 
-    // if (!success) {
-    //   throw new BadRequestException('Failed to create index');
-    // }
+    if (!success) {
+      throw new BadRequestException('Failed to create index');
+    }
 
     const start = performance.now();
 
@@ -392,16 +396,20 @@ export class SeedingService {
 
     this.logger.log('Finished ingesting files');
 
-    // const documents = await this.buildElasticDocument();
+    const documents = await this.buildElasticDocument();
 
-    // for (const document of documents) {
-    //   await lastValueFrom(
-    //     this.msgBrokerClient.send(
-    //       { cmd: 'index-document' },
-    //       { alias: this.config.elastic_index, body: document, customId: 'uuid_rda' },
-    //     ),
-    //   );
-    // }
+    for (const document of documents) {
+      await lastValueFrom(
+        this.msgBrokerClient.send(
+          { cmd: 'index-document' },
+          {
+            alias: this.config.elastic_index,
+            body: document,
+            customId: 'uuid_rda',
+          },
+        ),
+      );
+    }
 
     const end = performance.now();
     return {
@@ -779,6 +787,7 @@ export class SeedingService {
         relations: relations,
         related_institutions: uniqueInstitutes,
         keywords: keywords,
+        source: 'Deposit',
       });
     }
 
@@ -811,7 +820,7 @@ export class SeedingService {
 
   private preprocessBuffer(buffer: Buffer): Buffer {
     const fileContent = buffer.toString('utf-8');
-    // const escapedContent = fileContent.replace(/"/g, '\\"');
+    // const escapedContent = fileContent.replace(/&quot;/g, "'");
     return Buffer.from(fileContent, 'utf-8');
   }
 
