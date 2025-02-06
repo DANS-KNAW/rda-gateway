@@ -4,8 +4,11 @@ WORKDIR /usr/src/app
 
 # alpine versions use musl C library instead of the glibc library
 # We had the package to prevent compatibility issues.
-RUN apk add --no-cache libc6-compat \
-  && corepack enable pnpm
+RUN apk add --no-cache libc6-compat
+
+# This is a hot-fix for the issue with keyid mismatches: https://github.com/nodejs/corepack/issues/616
+RUN npm install -g corepack@latest
+RUN corepack enable pnpm
 
 FROM base AS deps
 
