@@ -14,13 +14,13 @@ export class Resource {
   @Column()
   title: string;
 
-  @Column()
+  @Column({ nullable: true })
   alternateTitle: string;
 
   @Column()
   uri: string;
 
-  @Column()
+  @Column({ nullable: true })
   backupUri: string;
 
   @Column({ nullable: true })
