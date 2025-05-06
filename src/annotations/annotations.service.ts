@@ -21,6 +21,8 @@ import { MSG_BROKER_TOKEN } from 'src/constants';
 import { ClientProxy } from '@nestjs/microservices';
 import { ResourceKeyword } from 'src/entities/resource-keyword.entity';
 import { Keyword } from 'src/entities/keyword.entity';
+import commonConfig from 'src/config/common.config';
+import { ConfigType } from '@nestjs/config';
 
 @Injectable()
 export class AnnotationsService {
@@ -57,6 +59,8 @@ export class AnnotationsService {
     private readonly keywordRepository: Repository<Keyword>,
     @Inject(MSG_BROKER_TOKEN)
     private readonly msgBrokerClient: ClientProxy,
+    @Inject(commonConfig.KEY)
+    private readonly config: ConfigType<typeof commonConfig>,
   ) {}
 
   async createAnnotation(createAnnotationDto: CreateAnnotationDto) {
@@ -293,7 +297,7 @@ export class AnnotationsService {
     const response = await lastValueFrom(
       this.msgBrokerClient.send(
         { cmd: 'index-document' },
-        { alias: 'rda', body: document, customId: 'uuid_rda' },
+        { alias: this.config.elastic_index, body: document, customId: 'uuid_rda' },
       ),
     );
 
