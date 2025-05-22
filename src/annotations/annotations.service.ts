@@ -245,7 +245,7 @@ export class AnnotationsService {
     }
 
     const uriType = await this.uriTypeRepository.find({
-      where: { uri_type: resource.uuid_uri_type },
+      where: { uuid_uri_type: resource.uuid_uri_type },
     });
 
     const keywords = [];
