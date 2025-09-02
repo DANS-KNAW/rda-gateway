@@ -1,3 +1,13 @@
+/**
+ * Since the application requires certain environment variables to be set,
+ * we will define them here for the testing environment.
+ *
+ * Setting the variables before importing anything ensures that they are available
+ * throughout to all modules and services.
+ */
+process.env.API_PORT = 3000;
+process.env.NODE_ENV = 'production';
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';

@@ -1,0 +1,6 @@
+import { z } from 'zod';
+import { CoreConfigSchema } from './core.config';
+
+export const EnvironmentSchema = CoreConfigSchema;
+
+export type EnvironmentVariables = z.infer<typeof EnvironmentSchema>;
