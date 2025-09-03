@@ -1,0 +1,14 @@
+.env*
+.git
+node_modules
+npm-debug.log
+coverage
+.nyc_output
+*.md
+Dockerfile*
+.dockerignore
+.cache
+dist/
+*.log
+.DS_Store
+.husky
