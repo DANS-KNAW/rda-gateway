@@ -32,5 +32,8 @@ COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 
 USER node
 
+# Standard debug port for Node.js
+EXPOSE 9229 
+
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["pnpm", "start:dev"]
+CMD ["pnpm", "start:debug"]

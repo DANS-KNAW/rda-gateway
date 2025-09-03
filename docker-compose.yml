@@ -1,0 +1,24 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${API_PORT}:${API_PORT}"
+      - "9229:9229"
+    develop:
+      watch:
+        - action: sync+restart
+          path: .
+          target: /app
+          x-initialSync: true
+          ignore:
+            - node_modules/
+            - .git/
+            - dist/
+        - action: rebuild
+          path: package.json
+        - action: rebuild
+          path: pnpm-lock.yaml
+    env_file:
+      - .env
