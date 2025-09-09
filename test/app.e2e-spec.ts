@@ -1,4 +1,6 @@
 /**
+ * @TODO Should find a better way to manage environment variables in tests.
+ *
  * Since the application requires certain environment variables to be set,
  * we will define them here for the testing environment.
  *
@@ -7,6 +9,8 @@
  */
 process.env.API_PORT = 3000;
 process.env.NODE_ENV = 'production';
+process.env.AUTH_STRATEGY = 'keycloak';
+process.env.KEYCLOAK_CLIENT_ID = 'rda-auth';
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';

@@ -7,6 +7,8 @@ describe('Validation Schema', () => {
     env = {
       NODE_ENV: 'development',
       API_PORT: 3000,
+      AUTH_STRATEGY: 'keycloak',
+      KEYCLOAK_CLIENT_ID: 'rda-auth',
     };
   });
 
@@ -47,5 +49,37 @@ describe('Validation Schema', () => {
     });
 
     expect(result.error).toBeDefined();
+  });
+
+  it('Should reject invalid AUTH_STRATEGY values', () => {
+    const result = EnvironmentSchema.safeParse({
+      ...env,
+      AUTH_STRATEGY: 'invalid_strategy',
+    });
+
+    expect(result.error).toBeDefined();
+  });
+
+  it('Should reject missing KEYCLOAK_CLIENT_ID when AUTH_STRATEGY is keycloak', () => {
+    const { KEYCLOAK_CLIENT_ID, ...envWithoutClientId } = env;
+    void KEYCLOAK_CLIENT_ID;
+
+    const result = EnvironmentSchema.safeParse({
+      ...envWithoutClientId,
+    });
+
+    expect(result.error).toBeDefined();
+  });
+
+  it('Should accept missing KEYCLOAK_CLIENT_ID when AUTH_STRATEGY is none', () => {
+    const { KEYCLOAK_CLIENT_ID, ...envWithoutClientId } = env;
+    void KEYCLOAK_CLIENT_ID;
+
+    const result = EnvironmentSchema.safeParse({
+      ...envWithoutClientId,
+      AUTH_STRATEGY: 'none',
+    });
+
+    expect(result.error).toBeUndefined();
   });
 });
