@@ -22,8 +22,8 @@ export default registerAs(
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE_NAME,
     autoLoadEntities: true,
-    // Synchronize should always be false in production.
-    synchronize: false,
+    // Synchronize is true only in development, false otherwise (never in production).
+    synchronize: process.env.NODE_ENV === 'development',
     /**
      * @TODO Migrations should be created after the first version of the entities is done.
      */
