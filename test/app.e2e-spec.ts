@@ -1,25 +1,36 @@
-/**
- * @TODO Should find a better way to manage environment variables in tests.
- *
- * Since the application requires certain environment variables to be set,
- * we will define them here for the testing environment.
- *
- * Setting the variables before importing anything ensures that they are available
- * throughout to all modules and services.
- */
-process.env.API_PORT = 3000;
-process.env.NODE_ENV = 'production';
-process.env.AUTH_STRATEGY = 'keycloak';
-process.env.KEYCLOAK_CLIENT_ID = 'rda-auth';
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import {
+  PostgreSqlContainer,
+  StartedPostgreSqlContainer,
+} from '@testcontainers/postgresql';
 import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
+  let postgresContainer: StartedPostgreSqlContainer;
+
+  beforeAll(async () => {
+    postgresContainer = await new PostgreSqlContainer(
+      'postgres:17-alpine',
+    ).start();
+
+    /**
+     * We set the environment variables to the generated container values here.
+     * TypeORM will read these when trying to connect to the database.
+     */
+    process.env.DATABASE_HOST = postgresContainer.getHost();
+    process.env.DATABASE_PORT = postgresContainer.getMappedPort(5432);
+    process.env.DATABASE_USERNAME = postgresContainer.getUsername();
+    process.env.DATABASE_PASSWORD = postgresContainer.getPassword();
+    process.env.DATABASE_NAME = postgresContainer.getDatabase();
+  });
+
+  afterAll(async () => {
+    await postgresContainer.stop();
+  });
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
