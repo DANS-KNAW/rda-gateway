@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { EnvironmentSchema } from './config/validation-schema';
 import coreConfig from './config/core.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { VocabulariesModule } from './vocabularies/vocabularies.module';
 import databaseConfig from './config/database.config';
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import databaseConfig from './config/database.config';
       validate: (env) => EnvironmentSchema.parse(env),
     }),
     TypeOrmModule.forRootAsync(databaseConfig.asProvider()),
+    VocabulariesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
