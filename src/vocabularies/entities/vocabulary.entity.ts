@@ -1,37 +1,35 @@
+import { IsNotEmpty, IsString } from 'class-validator';
 import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
 export class Vocabulary {
-  /**
-   * @TODO Should confirm if we want a composite primary key instead.
-   */
-  @PrimaryGeneratedColumn('uuid')
-  uuid: string;
-
-  @Column()
-  type: string;
-
-  @Column()
+  @IsString()
+  @IsNotEmpty()
+  @PrimaryColumn()
   subject_scheme: string;
 
-  @Column()
+  @IsString()
+  @IsNotEmpty()
+  @PrimaryColumn()
   scheme_uri: string;
 
-  @Column()
+  @IsString()
+  @IsNotEmpty()
+  @PrimaryColumn()
   value_uri: string;
 
   @Column({ type: 'jsonb', nullable: true })
   additional_metadata: Record<string, any>;
 
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
-  deleted_at: Date;
+  deleted_at: Date | null;
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
