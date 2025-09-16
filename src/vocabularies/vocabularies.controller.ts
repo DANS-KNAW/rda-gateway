@@ -4,14 +4,15 @@ import {
   Post,
   Body,
   Patch,
-  Param,
   Delete,
   Query,
+  HttpCode,
 } from '@nestjs/common';
 import { VocabulariesService } from './vocabularies.service';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 import { SelectVocabularyDto } from './dto/select-vocabulary.dto';
+import { IdVocabularyDto } from './dto/id-vocabulary.dto';
 
 @Controller('vocabularies')
 export class VocabulariesController {
@@ -32,8 +33,9 @@ export class VocabulariesController {
     return this.vocabulariesService.update(updateVocabularyDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.vocabulariesService.remove(+id);
+  @Delete('/archive')
+  @HttpCode(204)
+  archive(@Query() identifiers: IdVocabularyDto) {
+    return this.vocabulariesService.archive(identifiers);
   }
 }

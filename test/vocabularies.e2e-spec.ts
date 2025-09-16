@@ -249,4 +249,94 @@ describe('VocabulariesController (e2e)', () => {
       expect(body.message).toBe('No vocabularies found');
     });
   });
+
+  describe('/vocabularies/archive (DELETE)', () => {
+    it('/vocabularies/archive (DELETE)', async () => {
+      const archiveResponse = await request(app.getHttpServer())
+        .delete('/vocabularies/archive')
+        .query({
+          subject_scheme: 'Test Scheme',
+          scheme_uri: 'http://example.com/scheme',
+          value_uri: 'http://example.com/value',
+        })
+        .expect(204);
+
+      const findResponse = await request(app.getHttpServer())
+        .get('/vocabularies')
+        .query({
+          subject_scheme: 'Test Scheme',
+          scheme_uri: 'http://example.com/scheme',
+          value_uri: 'http://example.com/value',
+          amount: 1,
+          offset: undefined,
+          deleted: true,
+        })
+        .expect(200);
+
+      const body = findResponse.body as Vocabulary[];
+
+      expect(findResponse).toBeDefined();
+      expect(body).toBeDefined();
+      expect(Array.isArray(body)).toBe(true);
+      expect(body.length).toBe(1);
+      expect(body[0]).toMatchObject({
+        subject_scheme: 'Test Scheme',
+        scheme_uri: 'http://example.com/scheme',
+        value_uri: 'http://example.com/value',
+        additional_metadata: { key: 'newValue' },
+      });
+      expect(body[0].deleted_at).not.toBeNull();
+      expect(body[0]).toHaveProperty('updated_at');
+      expect(body[0]).toHaveProperty('created_at');
+      expect(archiveResponse).toBeDefined();
+      expect(archiveResponse.body).toEqual({});
+    });
+
+    it('/vocabularies/archive (DELETE) - already archived', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/vocabularies/archive')
+        .query({
+          subject_scheme: 'Test Scheme',
+          scheme_uri: 'http://example.com/scheme',
+          value_uri: 'http://example.com/value',
+        })
+        .expect(400);
+
+      const body = response.body as HttpExceptionBody;
+      expect(body).toBeDefined();
+      expect(body.message).toBe('Vocabulary is already archived');
+    });
+
+    it('/vocabularies/archive (DELETE) - nonexistent vocabulary', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/vocabularies/archive')
+        .query({
+          subject_scheme: 'Nonexistent Scheme',
+          scheme_uri: 'http://example.com/scheme',
+          value_uri: 'http://example.com/value',
+        })
+        .expect(404);
+
+      const body = response.body as HttpExceptionBody;
+      expect(body).toBeDefined();
+      expect(body.message).toBe('No vocabularies found');
+    });
+
+    it('/vocabularies/archive (DELETE) - validation error', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/vocabularies/archive')
+        .query({
+          subject_scheme: '', // Invalid: empty string
+          scheme_uri: 'not-a-valid-uri', // Invalid URI
+          // Missing value_uri
+        })
+        .expect(400);
+
+      const body = response.body as HttpExceptionBody;
+      expect(body).toBeDefined();
+      expect(body.message).toContain('subject_scheme should not be empty');
+      // expect(body.message).toContain('scheme_uri must be an URI');
+      expect(body.message).toContain('value_uri should not be empty');
+    });
+  });
 });

@@ -1,6 +1,6 @@
 import { PartialType, PickType } from '@nestjs/mapped-types';
 import { Vocabulary } from '../entities/vocabulary.entity';
-import { IsInt, IsOptional, IsPositive, Max } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsPositive, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SelectVocabularyDto extends PartialType(
@@ -18,4 +18,9 @@ export class SelectVocabularyDto extends PartialType(
   @IsInt()
   @IsPositive()
   offset?: number;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  deleted?: boolean;
 }

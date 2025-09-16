@@ -12,6 +12,7 @@ import { Vocabulary } from './entities/vocabulary.entity';
 import { Repository } from 'typeorm';
 import { ExceptionHandler } from '../common/decorators/exception-handler.decorator';
 import { SelectVocabularyDto } from './dto/select-vocabulary.dto';
+import { IdVocabularyDto } from './dto/id-vocabulary.dto';
 
 @Injectable()
 export class VocabulariesService {
@@ -80,7 +81,7 @@ export class VocabulariesService {
    */
   @ExceptionHandler
   async find(filter: SelectVocabularyDto): Promise<Vocabulary[]> {
-    const { amount, offset, ...vocab } = filter;
+    const { amount, offset, deleted, ...vocab } = filter;
 
     if (
       amount !== undefined &&
@@ -93,10 +94,15 @@ export class VocabulariesService {
       throw new BadRequestException('Offset must be a positive integer');
     }
 
+    if (deleted && typeof deleted !== 'boolean') {
+      throw new BadRequestException('Deleted must be a boolean');
+    }
+
     const results = await this.vocabularyRepository.find({
       where: { ...vocab },
       take: amount ? amount : 50,
       skip: offset,
+      withDeleted: deleted,
     });
 
     if (results.length < 1) {
@@ -175,7 +181,41 @@ export class VocabulariesService {
     );
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} vocabulary`;
+  /**
+   * Archives a vocabulary entry by marking it as deleted (soft delete).
+   *
+   * @param identifiers - An object containing the identifiers of the vocabulary.
+   * @returns `true` if the vocabulary was successfully archived.
+   * @throws {BadRequestException} If the vocabulary is already archived.
+   * @throws {InternalServerErrorException} If the archiving operation fails.
+   */
+  @ExceptionHandler
+  async archive(identifiers: IdVocabularyDto): Promise<void> {
+    const { subject_scheme, scheme_uri, value_uri } = identifiers;
+
+    const vocabulary = await this.find({
+      subject_scheme,
+      scheme_uri,
+      value_uri,
+      amount: 1,
+      deleted: true,
+    });
+
+    if (vocabulary[0].deleted_at !== null) {
+      throw new BadRequestException('Vocabulary is already archived');
+    }
+
+    const result = await this.vocabularyRepository.softDelete({
+      subject_scheme,
+      scheme_uri,
+      value_uri,
+    });
+
+    if (result.affected !== 1) {
+      this.logger.error(
+        `Failed to archive vocabulary: ${JSON.stringify(identifiers)}`,
+      );
+      throw new InternalServerErrorException('Failure archiving vocabulary');
+    }
   }
 }

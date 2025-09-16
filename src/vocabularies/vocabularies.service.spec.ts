@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Vocabulary } from './entities/vocabulary.entity';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import {
+  BadRequestException,
   InternalServerErrorException,
   Logger,
   NotFoundException,
@@ -24,6 +25,7 @@ describe('VocabulariesService', () => {
   type RepoMock = {
     create: jest.Mock;
     find: jest.Mock;
+    softDelete: jest.Mock;
     manager: {
       transaction: jest.Mock;
     };
@@ -38,6 +40,7 @@ describe('VocabulariesService', () => {
   const repositoryMock: RepoMock = {
     create: jest.fn(),
     find: jest.fn(),
+    softDelete: jest.fn(),
     manager: {
       transaction: jest.fn(
         async (cb: (m: typeof manager) => Promise<Vocabulary>) => cb(manager),
@@ -80,10 +83,13 @@ describe('VocabulariesService', () => {
     }).compile();
 
     service = module.get<VocabulariesService>(VocabulariesService);
+
     manager.insert.mockReset();
     manager.findOne.mockReset();
     manager.update.mockReset();
     repositoryMock.find.mockReset();
+    repositoryMock.softDelete.mockReset();
+
     loggerErrorSpy.mockClear();
   });
 
@@ -197,6 +203,7 @@ describe('VocabulariesService', () => {
         value_uri: undefined,
         amount: 10,
         offset: 5,
+        deleted: false,
       };
 
       const vocabularies = Array.from({ length: 20 }, (_, i) => ({
@@ -215,6 +222,7 @@ describe('VocabulariesService', () => {
         },
         take: 10,
         skip: 5,
+        withDeleted: false,
       });
       expect(results.length).toBe(10);
       expect(results).toEqual(vocabularies.slice(5, 15));
@@ -418,6 +426,95 @@ describe('VocabulariesService', () => {
       expect(manager.update).not.toHaveBeenCalled();
       expect(manager.findOne).not.toHaveBeenCalled();
       expect(loggerErrorSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('archive', () => {
+    it('should archive (soft delete) a vocabulary successfully', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      repositoryMock.softDelete.mockResolvedValue({ affected: 1 });
+
+      await expect(service.archive(identifiers)).resolves.toBe(undefined);
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.softDelete).toHaveBeenCalledWith(identifiers);
+    });
+
+    it('should throw an error if vocabulary not found', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([]);
+
+      await expect(service.archive(identifiers)).rejects.toThrow(
+        new NotFoundException('No vocabularies found'),
+      );
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.softDelete).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error if vocabulary is already archived', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([
+        { ...dummyVocabulary, deleted_at: new Date().toISOString() },
+      ]);
+      await expect(service.archive(identifiers)).rejects.toThrow(
+        new BadRequestException('Vocabulary is already archived'),
+      );
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.softDelete).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error if soft delete fails', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      repositoryMock.softDelete.mockResolvedValue({ affected: 0 });
+      await expect(service.archive(identifiers)).rejects.toThrow(
+        new InternalServerErrorException('Failure archiving vocabulary'),
+      );
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.softDelete).toHaveBeenCalledWith(identifiers);
+      expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
     });
   });
 });
