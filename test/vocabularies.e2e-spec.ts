@@ -4,6 +4,7 @@ import { App } from 'supertest/types';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { createTestApp } from './utils/create-test-app';
 import { setupTestDatabase } from './utils/test-database-setup';
+import { Vocabulary } from 'src/vocabularies/entities/vocabulary.entity';
 
 describe('VocabulariesController (e2e)', () => {
   let app: INestApplication<App>;
@@ -84,5 +85,99 @@ describe('VocabulariesController (e2e)', () => {
 
     expect(body).toBeDefined();
     expect(body.message).toBe('Duplicate key value violates unique constraint');
+  });
+
+  it('/vocabularies (GET)', async () => {
+    await request(app.getHttpServer())
+      .post('/vocabularies')
+      .send({
+        subject_scheme: 'Test Another Scheme',
+        scheme_uri: 'http://example.com/scheme',
+        value_uri: 'http://example.com/value',
+        additional_metadata: { key: 'value' },
+      })
+      .expect(201);
+
+    const response = await request(app.getHttpServer())
+      .get('/vocabularies')
+      .expect(200);
+
+    const body = response.body as Vocabulary[];
+
+    expect(response).toBeDefined();
+    expect(body).toBeDefined();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBe(2);
+    expect(body[0]).toMatchObject({
+      subject_scheme: 'Test Scheme',
+      scheme_uri: 'http://example.com/scheme',
+      value_uri: 'http://example.com/value',
+      additional_metadata: { key: 'value' },
+      deleted_at: null,
+    });
+    expect(body[0]).toHaveProperty('created_at');
+    expect(body[0]).toHaveProperty('updated_at');
+  });
+
+  it('/vocabularies (GET) - with filters', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/vocabularies')
+      .query({
+        subject_scheme: 'Test Another Scheme',
+        scheme_uri: 'http://example.com/scheme',
+        value_uri: 'http://example.com/value',
+        amount: 1,
+        offset: undefined,
+      })
+      .expect(200);
+
+    const body = response.body as Vocabulary[];
+
+    expect(response).toBeDefined();
+    expect(body).toBeDefined();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBe(1);
+    expect(body[0]).toMatchObject({
+      subject_scheme: 'Test Another Scheme',
+      scheme_uri: 'http://example.com/scheme',
+      value_uri: 'http://example.com/value',
+      additional_metadata: { key: 'value' },
+      deleted_at: null,
+    });
+    expect(body[0]).toHaveProperty('created_at');
+    expect(body[0]).toHaveProperty('updated_at');
+  });
+
+  it('/vocabularies (GET) - no results', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/vocabularies')
+      .query({
+        subject_scheme: 'Nonexistent Scheme',
+      })
+      .expect(404);
+
+    const body = response.body as HttpExceptionBody;
+
+    expect(body).toBeDefined();
+    expect(body.error).toBe('Not Found');
+    expect(body.message).toBe('No vocabularies found');
+    expect(body.statusCode).toBe(404);
+  });
+
+  it('/vocabularies (GET) - invalid query params', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/vocabularies')
+      .query({
+        amount: 51,
+        offset: 'not-a-number',
+      })
+      .expect(400);
+
+    const body = response.body as HttpExceptionBody;
+
+    expect(body).toBeDefined();
+    expect(body.message).toContain('amount must not be greater than 50');
+    expect(body.message).toContain('offset must be a positive number');
+    expect(body.message).toContain('offset must be an integer number');
   });
 });

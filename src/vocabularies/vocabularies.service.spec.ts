@@ -8,6 +8,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { SelectVocabularyDto } from './dto/select-vocabulary.dto';
 
 /**
  * @TODO The unit tests are functional and the repository is being mocked.
@@ -21,7 +22,7 @@ describe('VocabulariesService', () => {
 
   type RepoMock = {
     create: jest.Mock;
-    insert: jest.Mock;
+    find: jest.Mock;
     manager: {
       transaction: jest.Mock;
     };
@@ -34,7 +35,7 @@ describe('VocabulariesService', () => {
 
   const repositoryMock: RepoMock = {
     create: jest.fn(),
-    insert: jest.fn(),
+    find: jest.fn(),
     manager: {
       transaction: jest.fn(
         async (cb: (m: typeof manager) => Promise<Vocabulary>) => cb(manager),
@@ -162,5 +163,114 @@ describe('VocabulariesService', () => {
       },
     });
     expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should find all vocabularies (no filter)', async () => {
+    const vocabularies = Array.from({ length: 51 }, (_, i) => ({
+      ...dummyVocabulary,
+      value_uri: `${dummyVocabulary.value_uri}${i}`,
+    }));
+    repositoryMock.find.mockResolvedValue(vocabularies.slice(0, 50));
+
+    const results = await service.find({});
+
+    expect(repositoryMock.find).toHaveBeenCalledWith({
+      where: {},
+      take: 50,
+      skip: undefined,
+    });
+    expect(results.length).toBe(50);
+    expect(results).toEqual(vocabularies.slice(0, 50));
+  });
+
+  it('should find vocabularies with specific filters', async () => {
+    const filter: SelectVocabularyDto = {
+      subject_scheme: dummyVocabulary.subject_scheme,
+      scheme_uri: dummyVocabulary.scheme_uri,
+      value_uri: undefined,
+      amount: 10,
+      offset: 5,
+    };
+
+    const vocabularies = Array.from({ length: 20 }, (_, i) => ({
+      ...dummyVocabulary,
+      value_uri: `${dummyVocabulary.value_uri}${i}`,
+    }));
+    repositoryMock.find.mockResolvedValue(vocabularies.slice(5, 15));
+
+    const results = await service.find(filter);
+
+    expect(repositoryMock.find).toHaveBeenCalledWith({
+      where: {
+        subject_scheme: filter.subject_scheme,
+        scheme_uri: filter.scheme_uri,
+        value_uri: undefined,
+      },
+      take: 10,
+      skip: 5,
+    });
+    expect(results.length).toBe(10);
+    expect(results).toEqual(vocabularies.slice(5, 15));
+  });
+
+  it('should find a specific vocabulary with exact filters', async () => {
+    const filter: SelectVocabularyDto = {
+      subject_scheme: dummyVocabulary.subject_scheme,
+      scheme_uri: dummyVocabulary.scheme_uri,
+      value_uri: dummyVocabulary.value_uri,
+    };
+
+    repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+
+    const results = await service.find(filter);
+
+    expect(repositoryMock.find).toHaveBeenCalledWith({
+      where: {
+        subject_scheme: filter.subject_scheme,
+        scheme_uri: filter.scheme_uri,
+        value_uri: filter.value_uri,
+      },
+      take: 50,
+      skip: undefined,
+    });
+    expect(results.length).toBe(1);
+    expect(results).toEqual([dummyVocabulary]);
+  });
+
+  it('should throw if no vocabularies found', async () => {
+    const filter: SelectVocabularyDto = {
+      subject_scheme: dummyVocabulary.subject_scheme,
+      scheme_uri: dummyVocabulary.scheme_uri,
+      value_uri: dummyVocabulary.value_uri,
+    };
+
+    repositoryMock.find.mockResolvedValue([]);
+
+    await expect(service.find(filter)).rejects.toThrow(
+      new NotFoundException('No vocabularies found'),
+    );
+
+    expect(repositoryMock.find).toHaveBeenCalledWith({
+      where: {
+        subject_scheme: filter.subject_scheme,
+        scheme_uri: filter.scheme_uri,
+        value_uri: filter.value_uri,
+      },
+      take: 50,
+      skip: undefined,
+    });
+    expect(loggerErrorSpy).not.toHaveBeenCalled();
+  });
+
+  it('should throw if invalid amount or offset provided', async () => {
+    await expect(service.find({ amount: 0 })).rejects.toThrow(
+      'Amount must be between 1 and 50',
+    );
+    await expect(service.find({ amount: 51 })).rejects.toThrow(
+      'Amount must be between 1 and 50',
+    );
+    await expect(service.find({ offset: 0 })).rejects.toThrow(
+      'Offset must be a positive integer',
+    );
   });
 });

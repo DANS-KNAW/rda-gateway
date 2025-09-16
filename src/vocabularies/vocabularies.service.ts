@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -72,9 +73,33 @@ export class VocabulariesService {
     );
   }
 
+  /**
+   * Retrieves a list of vocabularies based on the provided filter criteria.
+   *
+   * @param filter - An object containing optional filtering options
+   * @returns {Vocabulary[]} An array of `Vocabulary` entities matching the filter criteria.
+   * @throws {NotFoundException} If no vocabularies are found matching the filter criteria.
+   */
   @ExceptionHandler
   async find(filter: SelectVocabularyDto): Promise<Vocabulary[]> {
-    const results = await this.vocabularyRepository.findBy({ ...filter });
+    const { amount, offset, ...vocab } = filter;
+
+    if (
+      amount !== undefined &&
+      (typeof amount !== 'number' || amount < 1 || amount > 50)
+    ) {
+      throw new BadRequestException('Amount must be between 1 and 50');
+    }
+
+    if (offset !== undefined && (typeof offset !== 'number' || offset < 1)) {
+      throw new BadRequestException('Offset must be a positive integer');
+    }
+
+    const results = await this.vocabularyRepository.find({
+      where: { ...vocab },
+      take: amount ? amount : 50,
+      skip: offset,
+    });
 
     if (results.length < 1) {
       throw new NotFoundException('No vocabularies found');
