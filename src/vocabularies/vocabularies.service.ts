@@ -26,9 +26,7 @@ export class VocabulariesService {
    * Creates a new vocabulary entry in the database.
    *
    * This method attempts to insert a new `Vocabulary` entity using the provided
-   * `CreateVocabularyDto`. The operation is performed within a database transaction
-   * to ensure atomicity. If the insertion fails or the inserted entity cannot be
-   * retrieved, appropriate errors are logged and exceptions are thrown.
+   * `CreateVocabularyDto`.
    *
    * @param createVocabularyDto - The DTO containing the vocabulary details to create.
    * @returns {Vocabulary} The created `Vocabulary` entity.
@@ -108,10 +106,72 @@ export class VocabulariesService {
     return results;
   }
 
-  update(id: number, updateVocabularyDto: UpdateVocabularyDto) {
-    return (
-      `This action updates a #${id} vocabulary` +
-      JSON.stringify(updateVocabularyDto)
+  /**
+   * Updates an existing vocabulary entry in the database.
+   *
+   * This method locates the vocabulary and updates its fields based on the
+   * provided `UpdateVocabularyDto`.
+   *
+   * Throws an `InternalServerErrorException` if the update fails, or a
+   * `NotFoundException` if the vocabulary cannot be found after the update.
+   *
+   * @param updateVocabularyDto - DTO containing the vocabulary identifiers and fields to update.
+   * @returns The updated `Vocabulary` entity.
+   * @throws {InternalServerErrorException} If the update operation fails.
+   * @throws {NotFoundException} If the vocabulary cannot be found after the update.
+   */
+  @ExceptionHandler
+  async update(updateVocabularyDto: UpdateVocabularyDto) {
+    return await this.vocabularyRepository.manager.transaction(
+      async (manager) => {
+        const { subject_scheme, scheme_uri, value_uri, ...toUpdate } =
+          updateVocabularyDto;
+
+        // No need to handle Will throw if vocabulary does not exist.
+        const existis = await this.find({
+          subject_scheme,
+          scheme_uri,
+          value_uri,
+          amount: 1,
+        });
+
+        const updated = await manager.update(
+          Vocabulary,
+          {
+            subject_scheme,
+            scheme_uri,
+            value_uri,
+          },
+          toUpdate,
+        );
+
+        // Edge case handling but should not be triggered.
+        if (updated.affected !== 1) {
+          this.logger.error(
+            `Failed to update vocabulary: ${JSON.stringify({ dto: updateVocabularyDto, original: existis })}`,
+          );
+          throw new InternalServerErrorException('Failure updating vocabulary');
+        }
+
+        // We make an additional fetch to refresh the entity.
+        const vocabulary = await manager.findOne(Vocabulary, {
+          where: { subject_scheme, scheme_uri, value_uri },
+        });
+
+        // Edge case handling but should also not be triggered.
+        if (!vocabulary) {
+          this.logger.error(
+            `Failed to find vocabulary after update: ${JSON.stringify(
+              updateVocabularyDto,
+            )}`,
+          );
+          throw new NotFoundException(
+            'Vocabulary not found after update. Please try again.',
+          );
+        }
+
+        return vocabulary;
+      },
     );
   }
 

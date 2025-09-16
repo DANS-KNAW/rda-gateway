@@ -9,6 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SelectVocabularyDto } from './dto/select-vocabulary.dto';
+import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 
 /**
  * @TODO The unit tests are functional and the repository is being mocked.
@@ -31,6 +32,7 @@ describe('VocabulariesService', () => {
   const manager = {
     insert: jest.fn(),
     findOne: jest.fn(),
+    update: jest.fn(),
   };
 
   const repositoryMock: RepoMock = {
@@ -80,6 +82,8 @@ describe('VocabulariesService', () => {
     service = module.get<VocabulariesService>(VocabulariesService);
     manager.insert.mockReset();
     manager.findOne.mockReset();
+    manager.update.mockReset();
+    repositoryMock.find.mockReset();
     loggerErrorSpy.mockClear();
   });
 
@@ -91,186 +95,329 @@ describe('VocabulariesService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should create a vocabulary successfully', async () => {
-    repositoryMock.create.mockReturnValue(createDto);
+  describe('create', () => {
+    it('should create a vocabulary successfully', async () => {
+      repositoryMock.create.mockReturnValue(createDto);
 
-    manager.insert.mockResolvedValue({
-      identifiers: [
-        {
+      manager.insert.mockResolvedValue({
+        identifiers: [
+          {
+            subject_scheme: createDto.subject_scheme,
+            scheme_uri: createDto.scheme_uri,
+            value_uri: createDto.value_uri,
+          },
+        ],
+      });
+      manager.findOne.mockResolvedValue(dummyVocabulary);
+
+      const result = await service.create(createDto);
+
+      expect(repositoryMock.create).toHaveBeenCalledWith(createDto);
+      expect(manager.insert).toHaveBeenCalledWith(Vocabulary, createDto);
+      expect(manager.findOne).toHaveBeenCalledWith(Vocabulary, {
+        where: {
           subject_scheme: createDto.subject_scheme,
           scheme_uri: createDto.scheme_uri,
           value_uri: createDto.value_uri,
         },
-      ],
+      });
+      expect(result).toEqual(dummyVocabulary);
     });
-    manager.findOne.mockResolvedValue(dummyVocabulary);
 
-    const result = await service.create(createDto);
+    it('should throw an error if insertion fails', async () => {
+      repositoryMock.create.mockReturnValue(createDto);
 
-    expect(repositoryMock.create).toHaveBeenCalledWith(createDto);
-    expect(manager.insert).toHaveBeenCalledWith(Vocabulary, createDto);
-    expect(manager.findOne).toHaveBeenCalledWith(Vocabulary, {
-      where: {
-        subject_scheme: createDto.subject_scheme,
-        scheme_uri: createDto.scheme_uri,
-        value_uri: createDto.value_uri,
-      },
+      manager.insert.mockResolvedValue({ identifiers: [] });
+
+      await expect(service.create(createDto)).rejects.toThrow(
+        new InternalServerErrorException('Failure inserting vocabulary'),
+      );
+
+      expect(repositoryMock.create).toHaveBeenCalledWith(createDto);
+      expect(manager.insert).toHaveBeenCalledWith(Vocabulary, createDto);
+      expect(manager.findOne).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
     });
-    expect(result).toEqual(dummyVocabulary);
-  });
 
-  it('should throw an error if insertion fails', async () => {
-    repositoryMock.create.mockReturnValue(createDto);
+    it('should throw an error if vocabulary not found after insertion', async () => {
+      repositoryMock.create.mockReturnValue(createDto);
 
-    manager.insert.mockResolvedValue({ identifiers: [] });
+      manager.insert.mockResolvedValue({
+        identifiers: [
+          {
+            subject_scheme: createDto.subject_scheme,
+            scheme_uri: createDto.scheme_uri,
+            value_uri: createDto.value_uri,
+          },
+        ],
+      });
+      manager.findOne.mockResolvedValue(null);
 
-    await expect(service.create(createDto)).rejects.toThrow(
-      new InternalServerErrorException('Failure inserting vocabulary'),
-    );
-
-    expect(repositoryMock.create).toHaveBeenCalledWith(createDto);
-    expect(manager.insert).toHaveBeenCalledWith(Vocabulary, createDto);
-    expect(manager.findOne).not.toHaveBeenCalled();
-    expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('should throw an error if vocabulary not found after insertion', async () => {
-    repositoryMock.create.mockReturnValue(createDto);
-
-    manager.insert.mockResolvedValue({
-      identifiers: [
-        {
+      await expect(service.create(createDto)).rejects.toThrow(
+        new NotFoundException(
+          'Vocabulary not found after insertion. Please try again.',
+        ),
+      );
+      expect(repositoryMock.create).toHaveBeenCalledWith(createDto);
+      expect(manager.insert).toHaveBeenCalledWith(Vocabulary, createDto);
+      expect(manager.findOne).toHaveBeenCalledWith(Vocabulary, {
+        where: {
           subject_scheme: createDto.subject_scheme,
           scheme_uri: createDto.scheme_uri,
           value_uri: createDto.value_uri,
         },
-      ],
+      });
+      expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
     });
-    manager.findOne.mockResolvedValue(null);
-
-    await expect(service.create(createDto)).rejects.toThrow(
-      new NotFoundException(
-        'Vocabulary not found after insertion. Please try again.',
-      ),
-    );
-    expect(repositoryMock.create).toHaveBeenCalledWith(createDto);
-    expect(manager.insert).toHaveBeenCalledWith(Vocabulary, createDto);
-    expect(manager.findOne).toHaveBeenCalledWith(Vocabulary, {
-      where: {
-        subject_scheme: createDto.subject_scheme,
-        scheme_uri: createDto.scheme_uri,
-        value_uri: createDto.value_uri,
-      },
-    });
-    expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('should find all vocabularies (no filter)', async () => {
-    const vocabularies = Array.from({ length: 51 }, (_, i) => ({
-      ...dummyVocabulary,
-      value_uri: `${dummyVocabulary.value_uri}${i}`,
-    }));
-    repositoryMock.find.mockResolvedValue(vocabularies.slice(0, 50));
+  describe('find', () => {
+    it('should find all vocabularies (no filter)', async () => {
+      const vocabularies = Array.from({ length: 51 }, (_, i) => ({
+        ...dummyVocabulary,
+        value_uri: `${dummyVocabulary.value_uri}${i}`,
+      }));
+      repositoryMock.find.mockResolvedValue(vocabularies.slice(0, 50));
 
-    const results = await service.find({});
+      const results = await service.find({});
 
-    expect(repositoryMock.find).toHaveBeenCalledWith({
-      where: {},
-      take: 50,
-      skip: undefined,
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: {},
+        take: 50,
+        skip: undefined,
+      });
+      expect(results.length).toBe(50);
+      expect(results).toEqual(vocabularies.slice(0, 50));
     });
-    expect(results.length).toBe(50);
-    expect(results).toEqual(vocabularies.slice(0, 50));
-  });
 
-  it('should find vocabularies with specific filters', async () => {
-    const filter: SelectVocabularyDto = {
-      subject_scheme: dummyVocabulary.subject_scheme,
-      scheme_uri: dummyVocabulary.scheme_uri,
-      value_uri: undefined,
-      amount: 10,
-      offset: 5,
-    };
-
-    const vocabularies = Array.from({ length: 20 }, (_, i) => ({
-      ...dummyVocabulary,
-      value_uri: `${dummyVocabulary.value_uri}${i}`,
-    }));
-    repositoryMock.find.mockResolvedValue(vocabularies.slice(5, 15));
-
-    const results = await service.find(filter);
-
-    expect(repositoryMock.find).toHaveBeenCalledWith({
-      where: {
-        subject_scheme: filter.subject_scheme,
-        scheme_uri: filter.scheme_uri,
+    it('should find vocabularies with specific filters', async () => {
+      const filter: SelectVocabularyDto = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: undefined,
-      },
-      take: 10,
-      skip: 5,
+        amount: 10,
+        offset: 5,
+      };
+
+      const vocabularies = Array.from({ length: 20 }, (_, i) => ({
+        ...dummyVocabulary,
+        value_uri: `${dummyVocabulary.value_uri}${i}`,
+      }));
+      repositoryMock.find.mockResolvedValue(vocabularies.slice(5, 15));
+
+      const results = await service.find(filter);
+
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: {
+          subject_scheme: filter.subject_scheme,
+          scheme_uri: filter.scheme_uri,
+          value_uri: undefined,
+        },
+        take: 10,
+        skip: 5,
+      });
+      expect(results.length).toBe(10);
+      expect(results).toEqual(vocabularies.slice(5, 15));
     });
-    expect(results.length).toBe(10);
-    expect(results).toEqual(vocabularies.slice(5, 15));
+
+    it('should find a specific vocabulary with exact filters', async () => {
+      const filter: SelectVocabularyDto = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+
+      const results = await service.find(filter);
+
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: {
+          subject_scheme: filter.subject_scheme,
+          scheme_uri: filter.scheme_uri,
+          value_uri: filter.value_uri,
+        },
+        take: 50,
+        skip: undefined,
+      });
+      expect(results.length).toBe(1);
+      expect(results).toEqual([dummyVocabulary]);
+    });
+
+    it('should throw if no vocabularies found', async () => {
+      const filter: SelectVocabularyDto = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([]);
+
+      await expect(service.find(filter)).rejects.toThrow(
+        new NotFoundException('No vocabularies found'),
+      );
+
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: {
+          subject_scheme: filter.subject_scheme,
+          scheme_uri: filter.scheme_uri,
+          value_uri: filter.value_uri,
+        },
+        take: 50,
+        skip: undefined,
+      });
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw if invalid amount or offset provided', async () => {
+      await expect(service.find({ amount: 0 })).rejects.toThrow(
+        'Amount must be between 1 and 50',
+      );
+      await expect(service.find({ amount: 51 })).rejects.toThrow(
+        'Amount must be between 1 and 50',
+      );
+      await expect(service.find({ offset: 0 })).rejects.toThrow(
+        'Offset must be a positive integer',
+      );
+    });
   });
 
-  it('should find a specific vocabulary with exact filters', async () => {
-    const filter: SelectVocabularyDto = {
-      subject_scheme: dummyVocabulary.subject_scheme,
-      scheme_uri: dummyVocabulary.scheme_uri,
-      value_uri: dummyVocabulary.value_uri,
-    };
+  describe('update', () => {
+    it('should update a vocabulary successfully', async () => {
+      const updateDto: UpdateVocabularyDto = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+        additional_metadata: { key: 'newValue' },
+      };
 
-    repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      manager.update.mockResolvedValue({
+        generatedMaps: [],
+        raw: [],
+        affected: 1,
+      });
+      manager.findOne.mockResolvedValue({ ...dummyVocabulary, ...updateDto });
 
-    const results = await service.find(filter);
+      const result = await service.update(updateDto);
 
-    expect(repositoryMock.find).toHaveBeenCalledWith({
-      where: {
-        subject_scheme: filter.subject_scheme,
-        scheme_uri: filter.scheme_uri,
-        value_uri: filter.value_uri,
-      },
-      take: 50,
-      skip: undefined,
+      expect(manager.update).toHaveBeenCalledWith(
+        Vocabulary,
+        {
+          subject_scheme: updateDto.subject_scheme,
+          scheme_uri: updateDto.scheme_uri,
+          value_uri: updateDto.value_uri,
+        },
+        { additional_metadata: updateDto.additional_metadata },
+      );
+      expect(manager.findOne).toHaveBeenCalledWith(Vocabulary, {
+        where: {
+          subject_scheme: updateDto.subject_scheme,
+          scheme_uri: updateDto.scheme_uri,
+          value_uri: updateDto.value_uri,
+        },
+      });
+      expect(result).toEqual({ ...dummyVocabulary, ...updateDto });
     });
-    expect(results.length).toBe(1);
-    expect(results).toEqual([dummyVocabulary]);
-  });
 
-  it('should throw if no vocabularies found', async () => {
-    const filter: SelectVocabularyDto = {
-      subject_scheme: dummyVocabulary.subject_scheme,
-      scheme_uri: dummyVocabulary.scheme_uri,
-      value_uri: dummyVocabulary.value_uri,
-    };
+    it('should throw if update affects no rows', async () => {
+      const updateDto: UpdateVocabularyDto = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+        additional_metadata: { key: 'newValue' },
+      };
 
-    repositoryMock.find.mockResolvedValue([]);
+      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      manager.update.mockResolvedValue({
+        generatedMaps: [],
+        raw: [],
+        affected: 0,
+      });
 
-    await expect(service.find(filter)).rejects.toThrow(
-      new NotFoundException('No vocabularies found'),
-    );
+      await expect(service.update(updateDto)).rejects.toThrow(
+        new InternalServerErrorException('Failure updating vocabulary'),
+      );
 
-    expect(repositoryMock.find).toHaveBeenCalledWith({
-      where: {
-        subject_scheme: filter.subject_scheme,
-        scheme_uri: filter.scheme_uri,
-        value_uri: filter.value_uri,
-      },
-      take: 50,
-      skip: undefined,
+      expect(manager.update).toHaveBeenCalledWith(
+        Vocabulary,
+        {
+          subject_scheme: updateDto.subject_scheme,
+          scheme_uri: updateDto.scheme_uri,
+          value_uri: updateDto.value_uri,
+        },
+        { additional_metadata: updateDto.additional_metadata },
+      );
+      expect(manager.findOne).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
     });
-    expect(loggerErrorSpy).not.toHaveBeenCalled();
-  });
 
-  it('should throw if invalid amount or offset provided', async () => {
-    await expect(service.find({ amount: 0 })).rejects.toThrow(
-      'Amount must be between 1 and 50',
-    );
-    await expect(service.find({ amount: 51 })).rejects.toThrow(
-      'Amount must be between 1 and 50',
-    );
-    await expect(service.find({ offset: 0 })).rejects.toThrow(
-      'Offset must be a positive integer',
-    );
+    it('should throw if vocabulary not found after update', async () => {
+      const updateDto: UpdateVocabularyDto = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+        additional_metadata: { key: 'newValue' },
+      };
+
+      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      manager.update.mockResolvedValue({
+        generatedMaps: [],
+        raw: [],
+        affected: 1,
+      });
+      manager.findOne.mockResolvedValue(null);
+
+      await expect(service.update(updateDto)).rejects.toThrow(
+        new NotFoundException(
+          'Vocabulary not found after update. Please try again.',
+        ),
+      );
+
+      expect(manager.update).toHaveBeenCalledWith(
+        Vocabulary,
+        {
+          subject_scheme: updateDto.subject_scheme,
+          scheme_uri: updateDto.scheme_uri,
+          value_uri: updateDto.value_uri,
+        },
+        { additional_metadata: updateDto.additional_metadata },
+      );
+      expect(manager.findOne).toHaveBeenCalledWith(Vocabulary, {
+        where: {
+          subject_scheme: updateDto.subject_scheme,
+          scheme_uri: updateDto.scheme_uri,
+          value_uri: updateDto.value_uri,
+        },
+      });
+      expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw if vocabulary to update does not exist', async () => {
+      const updateDto: UpdateVocabularyDto = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+        additional_metadata: { key: 'newValue' },
+      };
+
+      repositoryMock.find.mockResolvedValue([]);
+      await expect(service.update(updateDto)).rejects.toThrow(
+        new NotFoundException('No vocabularies found'),
+      );
+
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: {
+          subject_scheme: updateDto.subject_scheme,
+          scheme_uri: updateDto.scheme_uri,
+          value_uri: updateDto.value_uri,
+        },
+        take: 1,
+        skip: undefined,
+      });
+      expect(manager.update).not.toHaveBeenCalled();
+      expect(manager.findOne).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+    });
   });
 });

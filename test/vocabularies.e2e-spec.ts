@@ -26,158 +26,227 @@ describe('VocabulariesController (e2e)', () => {
     await app.close();
   });
 
-  it('/vocabularies (POST)', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/vocabularies')
-      .send({
+  describe('/vocabularies (POST)', () => {
+    it('/vocabularies (POST)', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/vocabularies')
+        .send({
+          subject_scheme: 'Test Scheme',
+          scheme_uri: 'http://example.com/scheme',
+          value_uri: 'http://example.com/value',
+          additional_metadata: { key: 'value' },
+        })
+        .expect(201);
+
+      expect(response).toBeDefined();
+      expect(response.body).toMatchObject({
         subject_scheme: 'Test Scheme',
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
         additional_metadata: { key: 'value' },
-      })
-      .expect(201);
-
-    expect(response).toBeDefined();
-    expect(response.body).toMatchObject({
-      subject_scheme: 'Test Scheme',
-      scheme_uri: 'http://example.com/scheme',
-      value_uri: 'http://example.com/value',
-      additional_metadata: { key: 'value' },
-      deleted_at: null,
+        deleted_at: null,
+      });
+      expect(response.body).toHaveProperty('created_at');
+      expect(response.body).toHaveProperty('updated_at');
     });
-    expect(response.body).toHaveProperty('created_at');
-    expect(response.body).toHaveProperty('updated_at');
+
+    it('/vocabularies (POST) - validation error', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/vocabularies')
+        .send({
+          subject_scheme: '', // Invalid: empty string
+          scheme_uri: 'not-a-valid-uri', // Invalid URI
+          // Missing value_uri
+          additional_metadata: 'should-be-an-object', // Invalid: should be an object
+        })
+        .expect(400);
+
+      const body = response.body as HttpExceptionBody;
+
+      expect(body).toBeDefined();
+      expect(body.message).toContain('subject_scheme should not be empty');
+      // expect(body.message).toContain('scheme_uri must be an URI');
+      expect(body.message).toContain('value_uri should not be empty');
+      expect(body.message).toContain('additional_metadata must be an object');
+    });
+
+    it('/vocabularies (POST) - duplicate entry', async () => {
+      // The previous test already created this entry.
+      const response = await request(app.getHttpServer())
+        .post('/vocabularies')
+        .send({
+          subject_scheme: 'Test Scheme',
+          scheme_uri: 'http://example.com/scheme',
+          value_uri: 'http://example.com/value',
+          additional_metadata: { key: 'value' },
+        })
+        .expect(409);
+
+      const body = response.body as HttpExceptionBody;
+
+      expect(body).toBeDefined();
+      expect(body.message).toBe(
+        'Duplicate key value violates unique constraint',
+      );
+    });
   });
 
-  it('/vocabularies (POST) - validation error', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/vocabularies')
-      .send({
-        subject_scheme: '', // Invalid: empty string
-        scheme_uri: 'not-a-valid-uri', // Invalid URI
-        // Missing value_uri
-        additional_metadata: 'should-be-an-object', // Invalid: should be an object
-      })
-      .expect(400);
+  describe('/vocabularies (GET)', () => {
+    it('/vocabularies (GET)', async () => {
+      await request(app.getHttpServer())
+        .post('/vocabularies')
+        .send({
+          subject_scheme: 'Test Another Scheme',
+          scheme_uri: 'http://example.com/scheme',
+          value_uri: 'http://example.com/value',
+          additional_metadata: { key: 'value' },
+        })
+        .expect(201);
 
-    const body = response.body as HttpExceptionBody;
+      const response = await request(app.getHttpServer())
+        .get('/vocabularies')
+        .expect(200);
 
-    expect(body).toBeDefined();
-    expect(body.message).toContain('subject_scheme should not be empty');
-    // expect(body.message).toContain('scheme_uri must be an URI');
-    expect(body.message).toContain('value_uri should not be empty');
-    expect(body.message).toContain('additional_metadata must be an object');
-  });
+      const body = response.body as Vocabulary[];
 
-  it('/vocabularies (POST) - duplicate entry', async () => {
-    // The previous test already created this entry.
-    const response = await request(app.getHttpServer())
-      .post('/vocabularies')
-      .send({
+      expect(response).toBeDefined();
+      expect(body).toBeDefined();
+      expect(Array.isArray(body)).toBe(true);
+      expect(body.length).toBe(2);
+      expect(body[0]).toMatchObject({
         subject_scheme: 'Test Scheme',
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
         additional_metadata: { key: 'value' },
-      })
-      .expect(409);
+        deleted_at: null,
+      });
+      expect(body[0]).toHaveProperty('created_at');
+      expect(body[0]).toHaveProperty('updated_at');
+    });
 
-    const body = response.body as HttpExceptionBody;
+    it('/vocabularies (GET) - with filters', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/vocabularies')
+        .query({
+          subject_scheme: 'Test Another Scheme',
+          scheme_uri: 'http://example.com/scheme',
+          value_uri: 'http://example.com/value',
+          amount: 1,
+          offset: undefined,
+        })
+        .expect(200);
 
-    expect(body).toBeDefined();
-    expect(body.message).toBe('Duplicate key value violates unique constraint');
-  });
+      const body = response.body as Vocabulary[];
 
-  it('/vocabularies (GET)', async () => {
-    await request(app.getHttpServer())
-      .post('/vocabularies')
-      .send({
+      expect(response).toBeDefined();
+      expect(body).toBeDefined();
+      expect(Array.isArray(body)).toBe(true);
+      expect(body.length).toBe(1);
+      expect(body[0]).toMatchObject({
         subject_scheme: 'Test Another Scheme',
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
         additional_metadata: { key: 'value' },
-      })
-      .expect(201);
-
-    const response = await request(app.getHttpServer())
-      .get('/vocabularies')
-      .expect(200);
-
-    const body = response.body as Vocabulary[];
-
-    expect(response).toBeDefined();
-    expect(body).toBeDefined();
-    expect(Array.isArray(body)).toBe(true);
-    expect(body.length).toBe(2);
-    expect(body[0]).toMatchObject({
-      subject_scheme: 'Test Scheme',
-      scheme_uri: 'http://example.com/scheme',
-      value_uri: 'http://example.com/value',
-      additional_metadata: { key: 'value' },
-      deleted_at: null,
+        deleted_at: null,
+      });
+      expect(body[0]).toHaveProperty('created_at');
+      expect(body[0]).toHaveProperty('updated_at');
     });
-    expect(body[0]).toHaveProperty('created_at');
-    expect(body[0]).toHaveProperty('updated_at');
+
+    it('/vocabularies (GET) - no results', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/vocabularies')
+        .query({
+          subject_scheme: 'Nonexistent Scheme',
+        })
+        .expect(404);
+
+      const body = response.body as HttpExceptionBody;
+
+      expect(body).toBeDefined();
+      expect(body.error).toBe('Not Found');
+      expect(body.message).toBe('No vocabularies found');
+      expect(body.statusCode).toBe(404);
+    });
+
+    it('/vocabularies (GET) - invalid query params', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/vocabularies')
+        .query({
+          amount: 51,
+          offset: 'not-a-number',
+        })
+        .expect(400);
+
+      const body = response.body as HttpExceptionBody;
+
+      expect(body).toBeDefined();
+      expect(body.message).toContain('amount must not be greater than 50');
+      expect(body.message).toContain('offset must be a positive number');
+      expect(body.message).toContain('offset must be an integer number');
+    });
   });
 
-  it('/vocabularies (GET) - with filters', async () => {
-    const response = await request(app.getHttpServer())
-      .get('/vocabularies')
-      .query({
-        subject_scheme: 'Test Another Scheme',
+  describe('/vocabularies (PATCH)', () => {
+    it('/vocabularies (PATCH)', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/vocabularies')
+        .send({
+          subject_scheme: 'Test Scheme',
+          scheme_uri: 'http://example.com/scheme',
+          value_uri: 'http://example.com/value',
+          additional_metadata: { key: 'newValue' },
+        })
+        .expect(200);
+
+      const body = response.body as Vocabulary;
+
+      expect(response).toBeDefined();
+      expect(body).toBeDefined();
+      expect(body).toMatchObject({
+        subject_scheme: 'Test Scheme',
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
-        amount: 1,
-        offset: undefined,
-      })
-      .expect(200);
-
-    const body = response.body as Vocabulary[];
-
-    expect(response).toBeDefined();
-    expect(body).toBeDefined();
-    expect(Array.isArray(body)).toBe(true);
-    expect(body.length).toBe(1);
-    expect(body[0]).toMatchObject({
-      subject_scheme: 'Test Another Scheme',
-      scheme_uri: 'http://example.com/scheme',
-      value_uri: 'http://example.com/value',
-      additional_metadata: { key: 'value' },
-      deleted_at: null,
+        additional_metadata: { key: 'newValue' },
+        deleted_at: null,
+      });
+      expect(body).toHaveProperty('created_at');
+      expect(body).toHaveProperty('updated_at');
     });
-    expect(body[0]).toHaveProperty('created_at');
-    expect(body[0]).toHaveProperty('updated_at');
-  });
 
-  it('/vocabularies (GET) - no results', async () => {
-    const response = await request(app.getHttpServer())
-      .get('/vocabularies')
-      .query({
-        subject_scheme: 'Nonexistent Scheme',
-      })
-      .expect(404);
+    it('/vocabularies (PATCH) - validation error', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/vocabularies')
+        .send({
+          subject_scheme: '', // Invalid: empty string
+          scheme_uri: 'not-a-valid-uri', // Invalid URI
+          // Missing value_uri
+          additional_metadata: 'should-be-an-object', // Invalid: should be an object
+        })
+        .expect(400);
 
-    const body = response.body as HttpExceptionBody;
+      const body = response.body as HttpExceptionBody;
+      expect(body).toBeDefined();
+      expect(body.message).toContain('subject_scheme should not be empty');
+      // expect(body.message).toContain('scheme_uri must be an URI');
+      expect(body.message).toContain('value_uri should not be empty');
+      expect(body.message).toContain('additional_metadata must be an object');
+    });
 
-    expect(body).toBeDefined();
-    expect(body.error).toBe('Not Found');
-    expect(body.message).toBe('No vocabularies found');
-    expect(body.statusCode).toBe(404);
-  });
+    it('/vocabularies (PATCH) - nonexistent vocabulary', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/vocabularies')
+        .send({
+          subject_scheme: 'Nonexistent Scheme',
+          scheme_uri: 'http://example.com/scheme',
+          value_uri: 'http://example.com/value',
+          additional_metadata: { key: 'value' },
+        })
+        .expect(404);
 
-  it('/vocabularies (GET) - invalid query params', async () => {
-    const response = await request(app.getHttpServer())
-      .get('/vocabularies')
-      .query({
-        amount: 51,
-        offset: 'not-a-number',
-      })
-      .expect(400);
-
-    const body = response.body as HttpExceptionBody;
-
-    expect(body).toBeDefined();
-    expect(body.message).toContain('amount must not be greater than 50');
-    expect(body.message).toContain('offset must be a positive number');
-    expect(body.message).toContain('offset must be an integer number');
+      const body = response.body as HttpExceptionBody;
+      expect(body).toBeDefined();
+      expect(body.message).toBe('No vocabularies found');
+    });
   });
 });

@@ -27,12 +27,9 @@ export class VocabulariesController {
     return this.vocabulariesService.find(selectVocabularyDto);
   }
 
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateVocabularyDto: UpdateVocabularyDto,
-  ) {
-    return this.vocabulariesService.update(+id, updateVocabularyDto);
+  @Patch()
+  update(@Body() updateVocabularyDto: UpdateVocabularyDto) {
+    return this.vocabulariesService.update(updateVocabularyDto);
   }
 
   @Delete(':id')

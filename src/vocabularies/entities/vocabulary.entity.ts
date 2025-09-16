@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNotEmptyObject,
+  IsObject,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import {
   Column,
   CreateDateColumn,
@@ -27,6 +33,7 @@ export class Vocabulary {
 
   @IsOptional()
   @IsObject()
+  @IsNotEmptyObject()
   @Column({ type: 'jsonb', nullable: true })
   additional_metadata: Record<string, any>;
 
