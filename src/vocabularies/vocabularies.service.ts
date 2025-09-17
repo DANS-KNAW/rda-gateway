@@ -217,5 +217,39 @@ export class VocabulariesService {
       );
       throw new InternalServerErrorException('Failure archiving vocabulary');
     }
+
+    return;
+  }
+
+  @ExceptionHandler
+  async restore(identifiers: IdVocabularyDto): Promise<void> {
+    const { subject_scheme, scheme_uri, value_uri } = identifiers;
+
+    const vocabulary = await this.find({
+      subject_scheme,
+      scheme_uri,
+      value_uri,
+      amount: 1,
+      deleted: true,
+    });
+
+    if (vocabulary[0].deleted_at === null) {
+      throw new BadRequestException('Vocabulary is not archived');
+    }
+
+    const result = await this.vocabularyRepository.restore({
+      subject_scheme,
+      scheme_uri,
+      value_uri,
+    });
+
+    if (result.affected !== 1) {
+      this.logger.error(
+        `Failed to restore vocabulary: ${JSON.stringify(identifiers)}`,
+      );
+      throw new InternalServerErrorException('Failure restoring vocabulary');
+    }
+
+    return;
   }
 }

@@ -26,6 +26,7 @@ describe('VocabulariesService', () => {
     create: jest.Mock;
     find: jest.Mock;
     softDelete: jest.Mock;
+    restore: jest.Mock;
     manager: {
       transaction: jest.Mock;
     };
@@ -41,6 +42,7 @@ describe('VocabulariesService', () => {
     create: jest.fn(),
     find: jest.fn(),
     softDelete: jest.fn(),
+    restore: jest.fn(),
     manager: {
       transaction: jest.fn(
         async (cb: (m: typeof manager) => Promise<Vocabulary>) => cb(manager),
@@ -89,6 +91,7 @@ describe('VocabulariesService', () => {
     manager.update.mockReset();
     repositoryMock.find.mockReset();
     repositoryMock.softDelete.mockReset();
+    repositoryMock.restore.mockReset();
 
     loggerErrorSpy.mockClear();
   });
@@ -514,6 +517,101 @@ describe('VocabulariesService', () => {
         withDeleted: true,
       });
       expect(repositoryMock.softDelete).toHaveBeenCalledWith(identifiers);
+      expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('restore', () => {
+    it('should restore (soft-delete) a vocabulary successfully', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([
+        { ...dummyVocabulary, deleted_at: new Date().toISOString() },
+      ]);
+      repositoryMock.restore.mockResolvedValue({ affected: 1 });
+
+      const result = await service.restore(identifiers);
+
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.restore).toHaveBeenCalledWith(identifiers);
+      expect(result).toBeUndefined();
+    });
+
+    it('should throw an error if vocabulary not found', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([]);
+
+      await expect(service.restore(identifiers)).rejects.toThrow(
+        new NotFoundException('No vocabularies found'),
+      );
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.restore).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error if vocabulary is not archived', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+
+      await expect(service.restore(identifiers)).rejects.toThrow(
+        new BadRequestException('Vocabulary is not archived'),
+      );
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.restore).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error if restore fails', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([
+        { ...dummyVocabulary, deleted_at: new Date().toISOString() },
+      ]);
+      repositoryMock.restore.mockResolvedValue({ affected: 0 });
+
+      await expect(service.restore(identifiers)).rejects.toThrow(
+        new InternalServerErrorException('Failure restoring vocabulary'),
+      );
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.restore).toHaveBeenCalledWith(identifiers);
       expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
     });
   });

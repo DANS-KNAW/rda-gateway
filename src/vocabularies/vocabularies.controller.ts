@@ -33,6 +33,12 @@ export class VocabulariesController {
     return this.vocabulariesService.update(updateVocabularyDto);
   }
 
+  @Patch('/restore')
+  @HttpCode(204)
+  restore(@Query() identifiers: IdVocabularyDto) {
+    return this.vocabulariesService.restore(identifiers);
+  }
+
   @Delete('/archive')
   @HttpCode(204)
   archive(@Query() identifiers: IdVocabularyDto) {
