@@ -185,7 +185,6 @@ export class VocabulariesService {
    * Archives a vocabulary entry by marking it as deleted (soft delete).
    *
    * @param identifiers - An object containing the identifiers of the vocabulary.
-   * @returns `true` if the vocabulary was successfully archived.
    * @throws {BadRequestException} If the vocabulary is already archived.
    * @throws {InternalServerErrorException} If the archiving operation fails.
    */
@@ -221,6 +220,13 @@ export class VocabulariesService {
     return;
   }
 
+  /**
+   * Restores a previously archived vocabulary entry based on the provided identifiers.
+   *
+   * @param identifiers - An object containing the identifiers of the vocabulary.
+   * @throws {BadRequestException} If the vocabulary is not archived.
+   * @throws {InternalServerErrorException} If the restore operation fails.
+   */
   @ExceptionHandler
   async restore(identifiers: IdVocabularyDto): Promise<void> {
     const { subject_scheme, scheme_uri, value_uri } = identifiers;
@@ -248,6 +254,49 @@ export class VocabulariesService {
         `Failed to restore vocabulary: ${JSON.stringify(identifiers)}`,
       );
       throw new InternalServerErrorException('Failure restoring vocabulary');
+    }
+
+    return;
+  }
+
+  /**
+   * Permanently removes a vocabulary entry identified by the given identifiers.
+   *
+   * The vocabulary must be archived (i.e., `deleted_at` is not null) before it can be permanently deleted.
+   *
+   * @param identifiers - An object containing the identifiers of the vocabulary.
+   * @throws {BadRequestException} If the vocabulary is not archived.
+   * @throws {InternalServerErrorException} If the deletion fails.
+   */
+  @ExceptionHandler
+  async remove(identifiers: IdVocabularyDto): Promise<void> {
+    const { subject_scheme, scheme_uri, value_uri } = identifiers;
+
+    const vocabulary = await this.find({
+      subject_scheme,
+      scheme_uri,
+      value_uri,
+      amount: 1,
+      deleted: true,
+    });
+
+    if (vocabulary[0].deleted_at === null) {
+      throw new BadRequestException(
+        'Vocabulary must be archived before permanent deletion',
+      );
+    }
+
+    const result = await this.vocabularyRepository.delete({
+      subject_scheme,
+      scheme_uri,
+      value_uri,
+    });
+
+    if (result.affected !== 1) {
+      this.logger.error(
+        `Failed to delete vocabulary: ${JSON.stringify(identifiers)}`,
+      );
+      throw new InternalServerErrorException('Failure deleting vocabulary');
     }
 
     return;

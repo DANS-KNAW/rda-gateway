@@ -27,6 +27,7 @@ describe('VocabulariesService', () => {
     find: jest.Mock;
     softDelete: jest.Mock;
     restore: jest.Mock;
+    delete: jest.Mock;
     manager: {
       transaction: jest.Mock;
     };
@@ -43,6 +44,7 @@ describe('VocabulariesService', () => {
     find: jest.fn(),
     softDelete: jest.fn(),
     restore: jest.fn(),
+    delete: jest.fn(),
     manager: {
       transaction: jest.fn(
         async (cb: (m: typeof manager) => Promise<Vocabulary>) => cb(manager),
@@ -92,6 +94,7 @@ describe('VocabulariesService', () => {
     repositoryMock.find.mockReset();
     repositoryMock.softDelete.mockReset();
     repositoryMock.restore.mockReset();
+    repositoryMock.delete.mockReset();
 
     loggerErrorSpy.mockClear();
   });
@@ -612,6 +615,102 @@ describe('VocabulariesService', () => {
         withDeleted: true,
       });
       expect(repositoryMock.restore).toHaveBeenCalledWith(identifiers);
+      expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('remove', () => {
+    it('should permanently remove a vocabulary successfully', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([
+        { ...dummyVocabulary, deleted_at: new Date().toISOString() },
+      ]);
+      repositoryMock.delete = jest.fn().mockResolvedValue({ affected: 1 });
+
+      const result = await service.remove(identifiers);
+
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.delete).toHaveBeenCalledWith(identifiers);
+      expect(result).toBeUndefined();
+    });
+
+    it('should throw an error if vocabulary not found', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([]);
+
+      await expect(service.remove(identifiers)).rejects.toThrow(
+        new NotFoundException('No vocabularies found'),
+      );
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.delete).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error if vocabulary is not archived', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      await expect(service.remove(identifiers)).rejects.toThrow(
+        new BadRequestException(
+          'Vocabulary must be archived before permanent deletion',
+        ),
+      );
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.delete).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error if delete fails', async () => {
+      const identifiers = {
+        subject_scheme: dummyVocabulary.subject_scheme,
+        scheme_uri: dummyVocabulary.scheme_uri,
+        value_uri: dummyVocabulary.value_uri,
+      };
+
+      repositoryMock.find.mockResolvedValue([
+        { ...dummyVocabulary, deleted_at: new Date().toISOString() },
+      ]);
+      repositoryMock.delete = jest.fn().mockResolvedValue({ affected: 0 });
+
+      await expect(service.remove(identifiers)).rejects.toThrow(
+        new InternalServerErrorException('Failure deleting vocabulary'),
+      );
+      expect(repositoryMock.find).toHaveBeenCalledWith({
+        where: identifiers,
+        take: 1,
+        skip: undefined,
+        withDeleted: true,
+      });
+      expect(repositoryMock.delete).toHaveBeenCalledWith(identifiers);
       expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
     });
   });

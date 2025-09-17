@@ -44,4 +44,10 @@ export class VocabulariesController {
   archive(@Query() identifiers: IdVocabularyDto) {
     return this.vocabulariesService.archive(identifiers);
   }
+
+  @Delete()
+  @HttpCode(204)
+  remove(@Query() identifiers: IdVocabularyDto) {
+    return this.vocabulariesService.remove(identifiers);
+  }
 }
