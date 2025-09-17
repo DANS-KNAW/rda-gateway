@@ -7,184 +7,258 @@ describe('Validation Schema', () => {
     env = {
       NODE_ENV: 'development',
       API_PORT: 3000,
+
       AUTH_STRATEGY: 'keycloak',
       KEYCLOAK_CLIENT_ID: 'rda-auth',
+
       DATABASE_HOST: 'localhost',
       DATABASE_PORT: 5432,
       DATABASE_USERNAME: 'postgres',
       DATABASE_PASSWORD: 'postgres',
       DATABASE_NAME: 'rda_gateway',
+
+      REDIS_HOST: 'localhost',
+      REDIS_PORT: 6379,
+      REDIS_PASSWORD: 'redispassword',
     };
   });
 
-  it('should accept valid configuration', () => {
-    const result = EnvironmentSchema.safeParse({
-      ...env,
+  describe('Core', () => {
+    it('should accept valid configuration', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+      });
+      expect(result.error).toBeUndefined();
+      expect(result.data).toEqual(env);
     });
-    expect(result.error).toBeUndefined();
-    expect(result.data).toEqual(env);
+
+    it('should reject invalid NODE_ENV values', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        NODE_ENV: 'staging',
+      });
+
+      expect(result.error).toBeDefined();
+    });
+
+    it('should accept missing API_PORT with default', () => {
+      const { API_PORT, ...envWithoutApiPort } = env;
+      void API_PORT;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutApiPort,
+      });
+
+      expect(result.error).toBeUndefined();
+      // We set the type explicitly as it should be successful
+      expect((result.data as EnvironmentVariables).API_PORT).toBe(3000);
+    });
+
+    it('should reject invalid API_PORT values', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        API_PORT: 70000,
+      });
+
+      expect(result.error).toBeDefined();
+    });
   });
 
-  it('should reject invalid NODE_ENV values', () => {
-    const result = EnvironmentSchema.safeParse({
-      ...env,
-      NODE_ENV: 'staging',
+  describe('IAM', () => {
+    it('should reject invalid AUTH_STRATEGY values', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        AUTH_STRATEGY: 'invalid_strategy',
+      });
+
+      expect(result.error).toBeDefined();
     });
 
-    expect(result.error).toBeDefined();
+    it('should reject missing KEYCLOAK_CLIENT_ID when AUTH_STRATEGY is keycloak', () => {
+      const { KEYCLOAK_CLIENT_ID, ...envWithoutClientId } = env;
+      void KEYCLOAK_CLIENT_ID;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutClientId,
+      });
+
+      expect(result.error).toBeDefined();
+    });
+
+    it('should accept missing KEYCLOAK_CLIENT_ID when AUTH_STRATEGY is none', () => {
+      const { KEYCLOAK_CLIENT_ID, ...envWithoutClientId } = env;
+      void KEYCLOAK_CLIENT_ID;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutClientId,
+        AUTH_STRATEGY: 'none',
+      });
+
+      expect(result.error).toBeUndefined();
+    });
   });
 
-  it('should accept missing API_PORT with default', () => {
-    const { API_PORT, ...envWithoutApiPort } = env;
-    void API_PORT;
+  describe('Database', () => {
+    it('should reject missing database hostname', () => {
+      const { DATABASE_HOST, ...envWithoutDbHost } = env;
+      void DATABASE_HOST;
 
-    const result = EnvironmentSchema.safeParse({
-      ...envWithoutApiPort,
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutDbHost,
+      });
+
+      expect(result.error).toBeDefined();
     });
 
-    expect(result.error).toBeUndefined();
-    // We set the type explicitly as it should be successful
-    expect((result.data as EnvironmentVariables).API_PORT).toBe(3000);
+    it('should reject invalid database hostname value', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        DATABASE_HOST: 'invalid_host@name',
+      });
+
+      expect(result.error).toBeDefined();
+    });
+
+    it('should reject missing database port', () => {
+      const { DATABASE_PORT, ...envWithoutDbPort } = env;
+      void DATABASE_PORT;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutDbPort,
+      });
+
+      expect(result.error).toBeDefined();
+    });
+
+    it('should reject invalid database port value', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        DATABASE_PORT: 70000,
+      });
+
+      expect(result.error).toBeDefined();
+    });
+
+    it('should reject missing database username', () => {
+      const { DATABASE_USERNAME, ...envWithoutDbUser } = env;
+      void DATABASE_USERNAME;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutDbUser,
+      });
+
+      expect(result.error).toBeDefined();
+    });
+
+    it('should reject empty database username', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        DATABASE_USERNAME: '',
+      });
+
+      expect(result.error).toBeDefined();
+    });
+
+    it('should reject missing database password', () => {
+      const { DATABASE_PASSWORD, ...envWithoutDbPass } = env;
+      void DATABASE_PASSWORD;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutDbPass,
+      });
+
+      expect(result.error).toBeDefined();
+    });
+
+    it('should reject empty database password', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        DATABASE_PASSWORD: '',
+      });
+
+      expect(result.error).toBeDefined();
+    });
+
+    it('should reject missing database name', () => {
+      const { DATABASE_NAME, ...envWithoutDbName } = env;
+      void DATABASE_NAME;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutDbName,
+      });
+
+      expect(result.error).toBeDefined();
+    });
+
+    it('should reject empty database name', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        DATABASE_NAME: '',
+      });
+
+      expect(result.error).toBeDefined();
+    });
   });
 
-  it('should reject invalid API_PORT values', () => {
-    const result = EnvironmentSchema.safeParse({
-      ...env,
-      API_PORT: 70000,
+  describe('BullMQ', () => {
+    it('should reject missing Redis hostname', () => {
+      const { REDIS_HOST, ...envWithoutRedisHost } = env;
+      void REDIS_HOST;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutRedisHost,
+      });
+
+      expect(result.error).toBeDefined();
     });
 
-    expect(result.error).toBeDefined();
-  });
+    it('should reject invalid Redis hostname value', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        REDIS_HOST: 'invalid_host@name',
+      });
 
-  it('should reject invalid AUTH_STRATEGY values', () => {
-    const result = EnvironmentSchema.safeParse({
-      ...env,
-      AUTH_STRATEGY: 'invalid_strategy',
+      expect(result.error).toBeDefined();
     });
 
-    expect(result.error).toBeDefined();
-  });
+    it('should reject missing Redis port', () => {
+      const { REDIS_PORT, ...envWithoutRedisPort } = env;
+      void REDIS_PORT;
 
-  it('should reject missing KEYCLOAK_CLIENT_ID when AUTH_STRATEGY is keycloak', () => {
-    const { KEYCLOAK_CLIENT_ID, ...envWithoutClientId } = env;
-    void KEYCLOAK_CLIENT_ID;
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutRedisPort,
+      });
 
-    const result = EnvironmentSchema.safeParse({
-      ...envWithoutClientId,
+      expect(result.error).toBeDefined();
     });
 
-    expect(result.error).toBeDefined();
-  });
+    it('should reject invalid Redis port value', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        REDIS_PORT: 70000,
+      });
 
-  it('should accept missing KEYCLOAK_CLIENT_ID when AUTH_STRATEGY is none', () => {
-    const { KEYCLOAK_CLIENT_ID, ...envWithoutClientId } = env;
-    void KEYCLOAK_CLIENT_ID;
-
-    const result = EnvironmentSchema.safeParse({
-      ...envWithoutClientId,
-      AUTH_STRATEGY: 'none',
+      expect(result.error).toBeDefined();
     });
 
-    expect(result.error).toBeUndefined();
-  });
+    it('should reject missing Redis password', () => {
+      const { REDIS_PASSWORD, ...envWithoutRedisPassword } = env;
+      void REDIS_PASSWORD;
 
-  it('should reject missing database hostname', () => {
-    const { DATABASE_HOST, ...envWithoutDbHost } = env;
-    void DATABASE_HOST;
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutRedisPassword,
+      });
 
-    const result = EnvironmentSchema.safeParse({
-      ...envWithoutDbHost,
+      expect(result.error).toBeDefined();
     });
 
-    expect(result.error).toBeDefined();
-  });
+    it('should reject empty Redis password', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        REDIS_PASSWORD: '',
+      });
 
-  it('should reject invalid database hostname value', () => {
-    const result = EnvironmentSchema.safeParse({
-      ...env,
-      DATABASE_HOST: 'invalid_host@name',
+      expect(result.error).toBeDefined();
     });
-
-    expect(result.error).toBeDefined();
-  });
-
-  it('should reject missing database port', () => {
-    const { DATABASE_PORT, ...envWithoutDbPort } = env;
-    void DATABASE_PORT;
-
-    const result = EnvironmentSchema.safeParse({
-      ...envWithoutDbPort,
-    });
-
-    expect(result.error).toBeDefined();
-  });
-
-  it('should reject invalid database port value', () => {
-    const result = EnvironmentSchema.safeParse({
-      ...env,
-      DATABASE_PORT: 70000,
-    });
-
-    expect(result.error).toBeDefined();
-  });
-
-  it('should reject missing database username', () => {
-    const { DATABASE_USERNAME, ...envWithoutDbUser } = env;
-    void DATABASE_USERNAME;
-
-    const result = EnvironmentSchema.safeParse({
-      ...envWithoutDbUser,
-    });
-
-    expect(result.error).toBeDefined();
-  });
-
-  it('should reject empty database username', () => {
-    const result = EnvironmentSchema.safeParse({
-      ...env,
-      DATABASE_USERNAME: '',
-    });
-
-    expect(result.error).toBeDefined();
-  });
-
-  it('should reject missing database password', () => {
-    const { DATABASE_PASSWORD, ...envWithoutDbPass } = env;
-    void DATABASE_PASSWORD;
-
-    const result = EnvironmentSchema.safeParse({
-      ...envWithoutDbPass,
-    });
-
-    expect(result.error).toBeDefined();
-  });
-
-  it('should reject empty database password', () => {
-    const result = EnvironmentSchema.safeParse({
-      ...env,
-      DATABASE_PASSWORD: '',
-    });
-
-    expect(result.error).toBeDefined();
-  });
-
-  it('should reject missing database name', () => {
-    const { DATABASE_NAME, ...envWithoutDbName } = env;
-    void DATABASE_NAME;
-
-    const result = EnvironmentSchema.safeParse({
-      ...envWithoutDbName,
-    });
-
-    expect(result.error).toBeDefined();
-  });
-
-  it('should reject empty database name', () => {
-    const result = EnvironmentSchema.safeParse({
-      ...env,
-      DATABASE_NAME: '',
-    });
-
-    expect(result.error).toBeDefined();
   });
 });

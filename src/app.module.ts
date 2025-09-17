@@ -8,10 +8,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { VocabulariesModule } from './vocabularies/vocabularies.module';
 import { IngestsModule } from './ingests/ingests.module';
 import databaseConfig from './config/database.config';
+import bullmqConfig from './config/bullmq.config';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [coreConfig, databaseConfig],
+      load: [coreConfig, databaseConfig, bullmqConfig],
       skipProcessEnv: true,
       validatePredefined: true,
       ignoreEnvFile: false, // Might want to change to true once fully containerized
