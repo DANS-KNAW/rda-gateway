@@ -56,6 +56,7 @@ describe('VocabulariesService', () => {
     scheme_uri: 'http://example.com/scheme',
     subject_scheme: 'Test Scheme',
     value_uri: 'http://example.com/value',
+    value_scheme: 'Test Value Scheme',
     additional_metadata: { key: 'value' },
     deleted_at: null,
     updated_at: new Date(),
@@ -66,6 +67,7 @@ describe('VocabulariesService', () => {
     scheme_uri: dummyVocabulary.scheme_uri,
     subject_scheme: dummyVocabulary.subject_scheme,
     value_uri: dummyVocabulary.value_uri,
+    value_scheme: dummyVocabulary.value_scheme,
     additional_metadata: dummyVocabulary.additional_metadata,
   };
 
@@ -117,6 +119,7 @@ describe('VocabulariesService', () => {
             subject_scheme: createDto.subject_scheme,
             scheme_uri: createDto.scheme_uri,
             value_uri: createDto.value_uri,
+            value_scheme: createDto.value_scheme,
           },
         ],
       });
@@ -131,6 +134,7 @@ describe('VocabulariesService', () => {
           subject_scheme: createDto.subject_scheme,
           scheme_uri: createDto.scheme_uri,
           value_uri: createDto.value_uri,
+          value_scheme: createDto.value_scheme,
         },
       });
       expect(result).toEqual(dummyVocabulary);
@@ -160,6 +164,7 @@ describe('VocabulariesService', () => {
             subject_scheme: createDto.subject_scheme,
             scheme_uri: createDto.scheme_uri,
             value_uri: createDto.value_uri,
+            value_scheme: createDto.value_scheme,
           },
         ],
       });
@@ -177,6 +182,7 @@ describe('VocabulariesService', () => {
           subject_scheme: createDto.subject_scheme,
           scheme_uri: createDto.scheme_uri,
           value_uri: createDto.value_uri,
+          value_scheme: createDto.value_scheme,
         },
       });
       expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
@@ -207,6 +213,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: undefined,
+        value_scheme: undefined,
         amount: 10,
         offset: 5,
         deleted: false,
@@ -239,6 +246,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([dummyVocabulary]);
@@ -250,6 +258,7 @@ describe('VocabulariesService', () => {
           subject_scheme: filter.subject_scheme,
           scheme_uri: filter.scheme_uri,
           value_uri: filter.value_uri,
+          value_scheme: filter.value_scheme,
         },
         take: 50,
         skip: undefined,
@@ -276,6 +285,7 @@ describe('VocabulariesService', () => {
           subject_scheme: filter.subject_scheme,
           scheme_uri: filter.scheme_uri,
           value_uri: filter.value_uri,
+          value_scheme: filter.value_scheme,
         },
         take: 50,
         skip: undefined,
@@ -302,6 +312,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
         additional_metadata: { key: 'newValue' },
       };
 
@@ -321,6 +332,7 @@ describe('VocabulariesService', () => {
           subject_scheme: updateDto.subject_scheme,
           scheme_uri: updateDto.scheme_uri,
           value_uri: updateDto.value_uri,
+          value_scheme: updateDto.value_scheme,
         },
         { additional_metadata: updateDto.additional_metadata },
       );
@@ -329,6 +341,7 @@ describe('VocabulariesService', () => {
           subject_scheme: updateDto.subject_scheme,
           scheme_uri: updateDto.scheme_uri,
           value_uri: updateDto.value_uri,
+          value_scheme: updateDto.value_scheme,
         },
       });
       expect(result).toEqual({ ...dummyVocabulary, ...updateDto });
@@ -339,6 +352,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
         additional_metadata: { key: 'newValue' },
       };
 
@@ -359,6 +373,7 @@ describe('VocabulariesService', () => {
           subject_scheme: updateDto.subject_scheme,
           scheme_uri: updateDto.scheme_uri,
           value_uri: updateDto.value_uri,
+          value_scheme: updateDto.value_scheme,
         },
         { additional_metadata: updateDto.additional_metadata },
       );
@@ -371,6 +386,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
         additional_metadata: { key: 'newValue' },
       };
 
@@ -394,6 +410,7 @@ describe('VocabulariesService', () => {
           subject_scheme: updateDto.subject_scheme,
           scheme_uri: updateDto.scheme_uri,
           value_uri: updateDto.value_uri,
+          value_scheme: updateDto.value_scheme,
         },
         { additional_metadata: updateDto.additional_metadata },
       );
@@ -402,6 +419,7 @@ describe('VocabulariesService', () => {
           subject_scheme: updateDto.subject_scheme,
           scheme_uri: updateDto.scheme_uri,
           value_uri: updateDto.value_uri,
+          value_scheme: updateDto.value_scheme,
         },
       });
       expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
@@ -412,6 +430,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
         additional_metadata: { key: 'newValue' },
       };
 
@@ -425,6 +444,7 @@ describe('VocabulariesService', () => {
           subject_scheme: updateDto.subject_scheme,
           scheme_uri: updateDto.scheme_uri,
           value_uri: updateDto.value_uri,
+          value_scheme: updateDto.value_scheme,
         },
         take: 1,
         skip: undefined,
@@ -441,6 +461,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([dummyVocabulary]);
@@ -461,6 +482,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([]);
@@ -483,6 +505,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([
@@ -506,6 +529,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([dummyVocabulary]);
@@ -530,6 +554,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([
@@ -554,6 +579,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([]);
@@ -576,6 +602,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([dummyVocabulary]);
@@ -598,6 +625,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([
@@ -625,6 +653,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([
@@ -649,6 +678,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([]);
@@ -671,6 +701,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([dummyVocabulary]);
@@ -694,6 +725,7 @@ describe('VocabulariesService', () => {
         subject_scheme: dummyVocabulary.subject_scheme,
         scheme_uri: dummyVocabulary.scheme_uri,
         value_uri: dummyVocabulary.value_uri,
+        value_scheme: dummyVocabulary.value_scheme,
       };
 
       repositoryMock.find.mockResolvedValue([

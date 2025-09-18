@@ -34,6 +34,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
           additional_metadata: { key: 'value' },
         })
         .expect(201);
@@ -43,6 +44,7 @@ describe('VocabulariesController (e2e)', () => {
         subject_scheme: 'Test Scheme',
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
+        value_scheme: 'Test Value Scheme',
         additional_metadata: { key: 'value' },
         deleted_at: null,
       });
@@ -57,6 +59,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: '', // Invalid: empty string
           scheme_uri: 'not-a-valid-uri', // Invalid URI
           // Missing value_uri
+          value_scheme: undefined, // Invalid type
           additional_metadata: 'should-be-an-object', // Invalid: should be an object
         })
         .expect(400);
@@ -78,6 +81,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
           additional_metadata: { key: 'value' },
         })
         .expect(409);
@@ -99,6 +103,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Another Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
           additional_metadata: { key: 'value' },
         })
         .expect(201);
@@ -117,6 +122,7 @@ describe('VocabulariesController (e2e)', () => {
         subject_scheme: 'Test Scheme',
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
+        value_scheme: 'Test Value Scheme',
         additional_metadata: { key: 'value' },
         deleted_at: null,
       });
@@ -131,6 +137,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Another Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
           amount: 1,
           offset: undefined,
         })
@@ -146,6 +153,7 @@ describe('VocabulariesController (e2e)', () => {
         subject_scheme: 'Test Another Scheme',
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
+        value_scheme: 'Test Value Scheme',
         additional_metadata: { key: 'value' },
         deleted_at: null,
       });
@@ -195,6 +203,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
           additional_metadata: { key: 'newValue' },
         })
         .expect(200);
@@ -207,6 +216,7 @@ describe('VocabulariesController (e2e)', () => {
         subject_scheme: 'Test Scheme',
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
+        value_scheme: 'Test Value Scheme',
         additional_metadata: { key: 'newValue' },
         deleted_at: null,
       });
@@ -221,6 +231,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: '', // Invalid: empty string
           scheme_uri: 'not-a-valid-uri', // Invalid URI
           // Missing value_uri
+          value_scheme: undefined, // Invalid type
           additional_metadata: 'should-be-an-object', // Invalid: should be an object
         })
         .expect(400);
@@ -240,6 +251,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Nonexistent Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
           additional_metadata: { key: 'value' },
         })
         .expect(404);
@@ -258,6 +270,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
         })
         .expect(204);
 
@@ -267,6 +280,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
           amount: 1,
           offset: undefined,
           deleted: true,
@@ -283,6 +297,7 @@ describe('VocabulariesController (e2e)', () => {
         subject_scheme: 'Test Scheme',
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
+        value_scheme: 'Test Value Scheme',
         additional_metadata: { key: 'newValue' },
       });
       expect(body[0].deleted_at).not.toBeNull();
@@ -299,6 +314,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
         })
         .expect(400);
 
@@ -314,6 +330,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Nonexistent Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
         })
         .expect(404);
 
@@ -329,6 +346,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: '', // Invalid: empty string
           scheme_uri: 'not-a-valid-uri', // Invalid URI
           // Missing value_uri
+          value_scheme: undefined, // Invalid type
         })
         .expect(400);
 
@@ -348,6 +366,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
         })
         .expect(204);
 
@@ -357,6 +376,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
           amount: 1,
           offset: undefined,
           deleted: false,
@@ -373,6 +393,7 @@ describe('VocabulariesController (e2e)', () => {
         subject_scheme: 'Test Scheme',
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
+        value_scheme: 'Test Value Scheme',
         additional_metadata: { key: 'newValue' },
       });
       expect(body[0].deleted_at).toBeNull();
@@ -389,6 +410,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
         })
         .expect(400);
 
@@ -404,6 +426,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Nonexistent Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
         })
         .expect(404);
 
@@ -419,6 +442,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: '', // Invalid: empty string
           scheme_uri: 'not-a-valid-uri', // Invalid URI
           // Missing value_uri
+          value_scheme: undefined, // Invalid type
         })
         .expect(400);
 
@@ -438,6 +462,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
         })
         .expect(204);
 
@@ -447,6 +472,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
         })
         .expect(204);
 
@@ -456,6 +482,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
           amount: 1,
           offset: undefined,
           deleted: true,
@@ -477,6 +504,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
         })
         .expect(404);
 
@@ -492,6 +520,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: '', // Invalid: empty string
           scheme_uri: 'not-a-valid-uri', // Invalid URI
           // Missing value_uri
+          value_scheme: undefined, // Invalid type
         })
         .expect(400);
 
@@ -509,6 +538,7 @@ describe('VocabulariesController (e2e)', () => {
           subject_scheme: 'Test Another Scheme',
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
+          value_scheme: 'Test Value Scheme',
         })
         .expect(400);
 

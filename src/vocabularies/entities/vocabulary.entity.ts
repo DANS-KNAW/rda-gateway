@@ -29,6 +29,11 @@ export class Vocabulary {
   @IsString()
   @IsNotEmpty()
   @PrimaryColumn()
+  value_scheme: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @PrimaryColumn()
   value_uri: string;
 
   @IsOptional()

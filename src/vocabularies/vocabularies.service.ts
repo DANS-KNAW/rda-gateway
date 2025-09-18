@@ -54,6 +54,7 @@ export class VocabulariesService {
           where: {
             subject_scheme: dto.subject_scheme,
             scheme_uri: dto.scheme_uri,
+            value_scheme: dto.value_scheme,
             value_uri: dto.value_uri,
           },
         });
@@ -130,13 +131,19 @@ export class VocabulariesService {
   async update(updateVocabularyDto: UpdateVocabularyDto) {
     return await this.vocabularyRepository.manager.transaction(
       async (manager) => {
-        const { subject_scheme, scheme_uri, value_uri, ...toUpdate } =
-          updateVocabularyDto;
+        const {
+          subject_scheme,
+          scheme_uri,
+          value_scheme,
+          value_uri,
+          ...toUpdate
+        } = updateVocabularyDto;
 
         // No need to handle Will throw if vocabulary does not exist.
         const existis = await this.find({
           subject_scheme,
           scheme_uri,
+          value_scheme,
           value_uri,
           amount: 1,
         });
@@ -146,6 +153,7 @@ export class VocabulariesService {
           {
             subject_scheme,
             scheme_uri,
+            value_scheme,
             value_uri,
           },
           toUpdate,
@@ -161,7 +169,7 @@ export class VocabulariesService {
 
         // We make an additional fetch to refresh the entity.
         const vocabulary = await manager.findOne(Vocabulary, {
-          where: { subject_scheme, scheme_uri, value_uri },
+          where: { subject_scheme, scheme_uri, value_scheme, value_uri },
         });
 
         // Edge case handling but should also not be triggered.
@@ -190,11 +198,12 @@ export class VocabulariesService {
    */
   @ExceptionHandler
   async archive(identifiers: IdVocabularyDto): Promise<void> {
-    const { subject_scheme, scheme_uri, value_uri } = identifiers;
+    const { subject_scheme, scheme_uri, value_scheme, value_uri } = identifiers;
 
     const vocabulary = await this.find({
       subject_scheme,
       scheme_uri,
+      value_scheme,
       value_uri,
       amount: 1,
       deleted: true,
@@ -207,6 +216,7 @@ export class VocabulariesService {
     const result = await this.vocabularyRepository.softDelete({
       subject_scheme,
       scheme_uri,
+      value_scheme,
       value_uri,
     });
 
@@ -229,11 +239,12 @@ export class VocabulariesService {
    */
   @ExceptionHandler
   async restore(identifiers: IdVocabularyDto): Promise<void> {
-    const { subject_scheme, scheme_uri, value_uri } = identifiers;
+    const { subject_scheme, scheme_uri, value_scheme, value_uri } = identifiers;
 
     const vocabulary = await this.find({
       subject_scheme,
       scheme_uri,
+      value_scheme,
       value_uri,
       amount: 1,
       deleted: true,
@@ -246,6 +257,7 @@ export class VocabulariesService {
     const result = await this.vocabularyRepository.restore({
       subject_scheme,
       scheme_uri,
+      value_scheme,
       value_uri,
     });
 
@@ -270,11 +282,12 @@ export class VocabulariesService {
    */
   @ExceptionHandler
   async remove(identifiers: IdVocabularyDto): Promise<void> {
-    const { subject_scheme, scheme_uri, value_uri } = identifiers;
+    const { subject_scheme, scheme_uri, value_scheme, value_uri } = identifiers;
 
     const vocabulary = await this.find({
       subject_scheme,
       scheme_uri,
+      value_scheme,
       value_uri,
       amount: 1,
       deleted: true,
@@ -289,6 +302,7 @@ export class VocabulariesService {
     const result = await this.vocabularyRepository.delete({
       subject_scheme,
       scheme_uri,
+      value_scheme,
       value_uri,
     });
 

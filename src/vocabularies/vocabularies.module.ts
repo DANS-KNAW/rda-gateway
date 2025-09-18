@@ -8,5 +8,6 @@ import { Vocabulary } from './entities/vocabulary.entity';
   imports: [TypeOrmModule.forFeature([Vocabulary])],
   controllers: [VocabulariesController],
   providers: [VocabulariesService],
+  exports: [VocabulariesService],
 })
 export class VocabulariesModule {}

@@ -4,7 +4,12 @@ import { IsBoolean, IsInt, IsOptional, IsPositive, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SelectVocabularyDto extends PartialType(
-  PickType(Vocabulary, ['subject_scheme', 'scheme_uri', 'value_uri'] as const),
+  PickType(Vocabulary, [
+    'subject_scheme',
+    'scheme_uri',
+    'value_scheme',
+    'value_uri',
+  ] as const),
 ) {
   @IsOptional()
   @Type(() => Number)
