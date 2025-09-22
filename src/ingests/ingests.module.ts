@@ -5,6 +5,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigType } from '@nestjs/config';
 import bullmqConfig from '../config/bullmq.config';
 import { VOCABULARIES_INGESTION_QUEUE } from './constants/queue-names.constant';
+import { VocabulariesModule } from '../vocabularies/vocabularies.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { VOCABULARIES_INGESTION_QUEUE } from './constants/queue-names.constant';
     BullModule.registerQueue({
       name: VOCABULARIES_INGESTION_QUEUE,
     }),
+    VocabulariesModule,
   ],
   controllers: [IngestsController],
   providers: [IngestsService],
