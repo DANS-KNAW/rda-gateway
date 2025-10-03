@@ -11,10 +11,11 @@ import { IamModule } from './iam/iam.module';
 import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module';
 import databaseConfig from './config/database.config';
 import bullmqConfig from './config/bullmq.config';
+import elasticsearchConfig from './config/elasticsearch.config';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [coreConfig, databaseConfig, bullmqConfig],
+      load: [coreConfig, databaseConfig, bullmqConfig, elasticsearchConfig],
       skipProcessEnv: true,
       validatePredefined: true,
       ignoreEnvFile: false, // Might want to change to true once fully containerized
