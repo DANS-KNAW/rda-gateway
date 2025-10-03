@@ -23,7 +23,8 @@ export default registerAs(
     database: process.env.DATABASE_NAME,
     autoLoadEntities: true,
     // Synchronize is true only in development, false otherwise (never in production).
-    synchronize: process.env.NODE_ENV === 'development',
+    // synchronize: process.env.NODE_ENV === 'development',
+    synchronize: false,
     /**
      * @TODO Migrations should be created after the first version of the entities is done.
      */
