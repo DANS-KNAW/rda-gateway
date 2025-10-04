@@ -19,7 +19,9 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors();
+  app.enableCors({
+    origin: '*',
+  });
 
   await app.listen(config.API_PORT);
 }
