@@ -1,6 +1,13 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { DataSource } from 'typeorm';
+import { customAlphabet } from 'nanoid';
+import { Annotation } from './types/annotation.interface';
 
 @Injectable()
 export class KnowledgeBaseService {
@@ -12,7 +19,12 @@ export class KnowledgeBaseService {
   ) {}
 
   async createDepositDocument() {
-    const resources = await this.dataSource.query(`SELECT * FROM resource`);
+    const rawResources = await this.dataSource.query(`SELECT * FROM resource`);
+
+    // filter out all resources with resource_source = 'Annotation'
+    const resources = rawResources.filter(
+      (resource) => resource.resource_source !== 'Annotation',
+    );
 
     this.logger.log(
       `Starting building of ${resources.length} deposit resources`,
@@ -80,7 +92,7 @@ export class KnowledgeBaseService {
       const gorcAttributes: any[] = [];
       for (const ga of gorcAttributesResource) {
         const gorcAttribute: any[] = await this.dataSource.query(
-          `SELECT * FROM gorc_attribute WHERE uuid_Attribute = '${ga.uuid_attribute}' LIMIT 1`,
+          `SELECT * FROM gorc_atribute WHERE uuid_Attribute = '${ga.uuid_attribute}' LIMIT 1`,
         );
         if (gorcAttribute.length < 1) {
           continue;
@@ -94,7 +106,7 @@ export class KnowledgeBaseService {
       const disciplines: any[] = [];
       for (const dr of disciplinesResource) {
         const discipline: any[] = await this.dataSource.query(
-          `SELECT * FROM discipline WHERE uuid_discipline = '${dr.uuid_discipline}' LIMIT 1`,
+          `SELECT * FROM discipline WHERE internal_identifier = '${dr.internal_identifier}' LIMIT 1`,
         );
         if (discipline.length < 1) {
           continue;
@@ -326,7 +338,7 @@ export class KnowledgeBaseService {
         relations: relations,
         related_institutions: uniqueInstitutes,
         keywords: keywords,
-        source: 'Deposit',
+        resource_source: 'Deposit',
       });
     }
 
@@ -465,15 +477,454 @@ export class KnowledgeBaseService {
 
       return document._source;
     } catch (error) {
-      console.log(error);
-
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
       if (error.meta?.statusCode === 404) {
         throw new NotFoundException('Document not found');
       }
-      throw error;
+      this.logger.error(error);
+    }
+  }
+
+  async createAnnotation(annotation: Annotation) {
+    const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXZ');
+
+    console.log(annotation);
+
+    const resource = {
+      uuid: annotation.resource,
+      uuid_link: null,
+      uuid_rda: `rda_tiger:${nanoid()}`,
+      title: annotation.title,
+      alternateTitle: null,
+      uri: annotation.resource,
+      backupUri: null,
+      uri2: null,
+      backupUri2: null,
+      pid_lod_type: null,
+      pid_lod: null,
+      dc_date: new Date().toISOString().split('T')[0],
+      dc_description: annotation.description || '',
+      dc_language: annotation.language.value,
+      type: 'publication-other',
+      dc_type: 'Other',
+      card_url: null,
+      resource_source: 'Annotation',
+      fragment: annotation.selectedText,
+      uuid_uri_type: null,
+      notes: annotation.notes || null,
+      last_update: null,
+      pathway: null,
+      pathway_uuid: null,
+      group_name: null,
+      group_uuid: null,
+      changed: null,
+      submitter: annotation.submitter,
+    };
+
+    let document: any = null;
+
+    // Create transaction to insert into resource and
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.query(
+        `INSERT INTO resource (uuid, uuid_link, uuid_rda, title, "alternateTitle", uri, "backupUri", uri2, "backupUri2", pid_lod_type, pid_lod, dc_date, dc_description, dc_language, type, dc_type, card_url, resource_source, fragment, uuid_uri_type, notes, last_update, pathway, pathway_uuid, group_name, group_uuid, changed, submitter) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)`,
+        [
+          resource.uuid,
+          resource.uuid_link,
+          resource.uuid_rda,
+          resource.title,
+          resource.alternateTitle,
+          resource.uri,
+          resource.backupUri,
+          resource.uri2,
+          resource.backupUri2,
+          resource.pid_lod_type,
+          resource.pid_lod,
+          resource.dc_date,
+          resource.dc_description,
+          resource.dc_language,
+          resource.type,
+          resource.dc_type,
+          resource.card_url,
+          resource.resource_source,
+          resource.fragment,
+          resource.uuid_uri_type,
+          resource.notes,
+          resource.last_update,
+          resource.pathway,
+          resource.pathway_uuid,
+          resource.group_name,
+          resource.group_uuid,
+          resource.changed,
+          resource.submitter,
+        ],
+      );
+
+      const interestGroups: any[] = [];
+      for (const annotationIG of annotation.interest_groups || []) {
+        const groupResource = {
+          relation: 'igLink',
+          relation_uuid: 'rda_graph:T0ZC84O3',
+          title_group: annotationIG.label,
+          uuid_group: annotationIG.value,
+          title_resource: resource.title,
+          uuid_resource: resource.uuid_rda,
+        };
+
+        const interestGroup = await queryRunner.query(
+          `SELECT * FROM interest_group WHERE "uuid_interestGroup" = $1 LIMIT 1`,
+          [groupResource.uuid_group],
+        );
+
+        if (interestGroup.length < 1) {
+          throw new NotFoundException('Interest Group not found!');
+        }
+
+        await queryRunner.query(
+          `INSERT INTO group_resource (relation, relation_uuid, title_group, uuid_group, title_resource, uuid_resource) VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            groupResource.relation,
+            groupResource.relation_uuid,
+            groupResource.title_group,
+            groupResource.uuid_group,
+            groupResource.title_resource,
+            groupResource.uuid_resource,
+          ],
+        );
+
+        interestGroups.push({
+          ...interestGroup[0],
+          relation: groupResource.relation,
+        });
+      }
+
+      const workingGroups: any[] = [];
+      for (const annotationWG of annotation.working_groups || []) {
+        const groupResource = {
+          relation: 'wgLink',
+          relation_uuid: 'rda_graph:T0ZC84O2',
+          title_group: annotationWG.label,
+          uuid_group: annotationWG.value,
+          title_resource: resource.title,
+          uuid_resource: resource.uuid_rda,
+        };
+
+        const workingGroup = await queryRunner.query(
+          `SELECT * FROM working_group WHERE uuid_working_group = $1 LIMIT 1`,
+          [groupResource.uuid_group],
+        );
+
+        if (workingGroup.length < 1) {
+          throw new NotFoundException('Working Group not found!');
+        }
+
+        await queryRunner.query(
+          `INSERT INTO group_resource (relation, relation_uuid, title_group, uuid_group, title_resource, uuid_resource) VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            groupResource.relation,
+            groupResource.relation_uuid,
+            groupResource.title_group,
+            groupResource.uuid_group,
+            groupResource.title_resource,
+            groupResource.uuid_resource,
+          ],
+        );
+
+        workingGroups.push({
+          ...workingGroup[0],
+          relation: groupResource.relation,
+        });
+      }
+
+      const pathways: any[] = [];
+      for (const annotationPathway of annotation.pathways || []) {
+        const ResourcePathway = {
+          pathway: annotationPathway.label,
+          uuid_pathway: annotationPathway.value,
+          relation_uuid: 'rda_graph:E8904E44',
+          relation: 'supports',
+          resource: resource.title,
+          uuid_resource: resource.uuid_rda,
+        };
+
+        const pathway = await queryRunner.query(
+          `SELECT * FROM pathway WHERE uuid_pathway = $1 LIMIT 1`,
+          [ResourcePathway.uuid_pathway],
+        );
+
+        if (pathway.length < 1) {
+          throw new NotFoundException('Pathway not found!');
+        }
+
+        await queryRunner.query(
+          `INSERT INTO resource_pathway (pathway, uuid_pathway, relation_uuid, relation, resource, uuid_resource) VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            ResourcePathway.pathway,
+            ResourcePathway.uuid_pathway,
+            ResourcePathway.relation_uuid,
+            ResourcePathway.relation,
+            ResourcePathway.resource,
+            ResourcePathway.uuid_resource,
+          ],
+        );
+
+        pathways.push({
+          ...pathway[0],
+          relation: ResourcePathway.relation,
+        });
+      }
+
+      const disciplines: any[] = [];
+      for (const annotationDiscipline of annotation.disciplines || []) {
+        const resourceDiscipline = {
+          disciplines: annotationDiscipline.label,
+          uuid_disciplines: annotationDiscipline.value,
+          resource: resource.title,
+          uuid_resource: resource.uuid_rda,
+        };
+
+        const discipline = await queryRunner.query(
+          `SELECT * FROM discipline WHERE internal_identifier = $1 LIMIT 1`,
+          [resourceDiscipline.uuid_disciplines],
+        );
+
+        if (discipline.length < 1) {
+          throw new NotFoundException('Discipline not found!');
+        }
+
+        await queryRunner.query(
+          `INSERT INTO resource_discipline (disciplines, uuid_disciplines, resource, uuid_resource) VALUES ($1, $2, $3, $4)`,
+          [
+            resourceDiscipline.disciplines,
+            resourceDiscipline.uuid_disciplines,
+            resourceDiscipline.resource,
+            resourceDiscipline.uuid_resource,
+          ],
+        );
+
+        disciplines.push({
+          ...discipline[0],
+        });
+      }
+
+      const gorcElements: any[] = [];
+      for (const annotationGORCElement of annotation.gorc_elements || []) {
+        const resourceGORCElement = {
+          element: annotationGORCElement.label,
+          uuid_element: annotationGORCElement.value,
+          resource: resource.title,
+          uuid_resource: resource.uuid_rda,
+        };
+
+        const gorcElement = await queryRunner.query(
+          `SELECT * FROM gorc_element WHERE uuid_element = $1 LIMIT 1`,
+          [resourceGORCElement.uuid_element],
+        );
+
+        if (gorcElement.length < 1) {
+          throw new NotFoundException('GORC Element not found!');
+        }
+
+        await queryRunner.query(
+          `INSERT INTO resource_gorc_element (element, uuid_element, resource, uuid_resource) VALUES ($1, $2, $3, $4)`,
+          [
+            resourceGORCElement.element,
+            resourceGORCElement.uuid_element,
+            resourceGORCElement.resource,
+            resourceGORCElement.uuid_resource,
+          ],
+        );
+
+        gorcElements.push({
+          ...gorcElement[0],
+        });
+      }
+
+      const gorcAttributes: any[] = [];
+      for (const annotationGORCAttribute of annotation.gorc_attributes || []) {
+        const resourceGORCAttribute = {
+          attribute: annotationGORCAttribute.label,
+          uuid_Attribute: annotationGORCAttribute.value,
+          resource: resource.title,
+          uuid_resource: resource.uuid_rda,
+        };
+
+        const gorcAttribute = await queryRunner.query(
+          `SELECT * FROM gorc_atribute WHERE uuid_Attribute = $1 LIMIT 1`,
+          [resourceGORCAttribute.uuid_Attribute],
+        );
+
+        if (gorcAttribute.length < 1) {
+          throw new NotFoundException('GORC Attribute not found!');
+        }
+
+        await queryRunner.query(
+          `INSERT INTO resource_gorc_attribute (attribute, "uuid_Attribute", resource, uuid_resource) VALUES ($1, $2, $3, $4)`,
+          [
+            resourceGORCAttribute.attribute,
+            resourceGORCAttribute.uuid_Attribute,
+            resourceGORCAttribute.resource,
+            resourceGORCAttribute.uuid_resource,
+          ],
+        );
+
+        gorcAttributes.push({
+          ...gorcAttribute[0],
+        });
+      }
+
+      const uriType = await queryRunner.query(
+        `SELECT * FROM uri_type WHERE uuid_uri_type = $1`,
+        [annotation.resource_type.value],
+      );
+
+      const keywords: any[] = [];
+      for (const annotationKeyword of annotation.keywords || []) {
+        const resourceKeyword = {
+          uuid_resource: resource.uuid_rda,
+          uuid_keyword: annotationKeyword.value,
+        };
+
+        const keyword = await queryRunner.query(
+          `SELECT * FROM keyword WHERE uuid_keyword = $1 LIMIT 1`,
+          [resourceKeyword.uuid_keyword],
+        );
+
+        if (keyword.length < 1) {
+          throw new NotFoundException('Keyword not found!');
+        }
+
+        await queryRunner.query(
+          `INSERT INTO resource_keyword (uuid_resource, uuid_keyword) VALUES ($1, $2)`,
+          [resourceKeyword.uuid_resource, resourceKeyword.uuid_keyword],
+        );
+
+        keywords.push({
+          ...keyword[0],
+        });
+      }
+
+      document = {
+        ...resource,
+        interest_groups: interestGroups,
+        working_groups: workingGroups,
+        pathways: pathways,
+        disciplines: disciplines,
+        gorc_elements: gorcElements,
+        gorc_attributes: gorcAttributes,
+        uri_type: uriType,
+        keywords: keywords,
+      };
+
+      const result = await this.elasticsearchService.index({
+        index: 'rda-0001',
+        id: document.uuid_rda,
+        document: document,
+        refresh: true,
+      });
+
+      if (result.result !== 'created' && result.result !== 'updated') {
+        throw new InternalServerErrorException('Error indexing annotation');
+      }
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      console.error('Error creating annotation:', error);
+      await queryRunner.rollbackTransaction();
+      throw new InternalServerErrorException('Error creating annotation');
+    } finally {
+      await queryRunner.release();
+    }
+
+    return document;
+  }
+
+  async deleteAnnotation(uuid_rda: string) {
+    // First verify the resource exists and is an annotation
+    const resource = await this.dataSource.query(
+      `SELECT * FROM resource WHERE uuid_rda = $1 AND resource_source = 'Annotation' LIMIT 1`,
+      [uuid_rda],
+    );
+
+    if (resource.length < 1) {
+      throw new NotFoundException('Annotation not found');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const exists = await this.elasticsearchService.indices.existsAlias({
+        name: 'rda',
+      });
+
+      if (exists) {
+        try {
+          await this.elasticsearchService.delete({
+            index: 'rda-0001',
+            id: uuid_rda,
+            refresh: true,
+          });
+        } catch (error) {
+          if (error.meta?.statusCode !== 404) {
+            throw error;
+          }
+          this.logger.warn(`Document ${uuid_rda} not found in Elasticsearch`);
+        }
+      }
+
+      await queryRunner.query(
+        `DELETE FROM group_resource WHERE uuid_resource = $1`,
+        [uuid_rda],
+      );
+
+      await queryRunner.query(
+        `DELETE FROM resource_pathway WHERE uuid_resource = $1`,
+        [uuid_rda],
+      );
+
+      await queryRunner.query(
+        `DELETE FROM resource_discipline WHERE uuid_resource = $1`,
+        [uuid_rda],
+      );
+
+      await queryRunner.query(
+        `DELETE FROM resource_gorc_element WHERE uuid_resource = $1`,
+        [uuid_rda],
+      );
+
+      await queryRunner.query(
+        `DELETE FROM resource_gorc_attribute WHERE uuid_resource = $1`,
+        [uuid_rda],
+      );
+
+      await queryRunner.query(
+        `DELETE FROM resource_keyword WHERE uuid_resource = $1`,
+        [uuid_rda],
+      );
+
+      await queryRunner.query(`DELETE FROM resource WHERE uuid_rda = $1`, [
+        uuid_rda,
+      ]);
+
+      await queryRunner.commitTransaction();
+
+      this.logger.log(`Successfully deleted annotation ${uuid_rda}`);
+
+      return {
+        success: true,
+        message: 'Annotation deleted successfully',
+        uuid_rda,
+      };
+    } catch (error) {
+      this.logger.error(`Error deleting annotation ${uuid_rda}:`, error);
+      await queryRunner.rollbackTransaction();
+      throw new InternalServerErrorException('Error deleting annotation');
+    } finally {
+      await queryRunner.release();
     }
   }
 }

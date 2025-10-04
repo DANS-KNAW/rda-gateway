@@ -1,6 +1,16 @@
-import { Controller, Get, HttpCode, Param, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Req,
+} from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import { KnowledgeBaseService } from './knowledge-base.service';
+import type { Annotation } from './types/annotation.interface';
 
 @Controller('knowledge-base')
 export class KnowledgeBaseController {
@@ -24,5 +34,20 @@ export class KnowledgeBaseController {
     @Param('document') document: string,
   ) {
     return this.knowledgeBaseService.getDocument(index, document);
+  }
+
+  @Post('/annotation')
+  createAnnotation(@Body() body: Annotation) {
+    return this.knowledgeBaseService.createAnnotation(body);
+  }
+
+  @Delete('/annotation/:id')
+  deleteAnnotation(@Param('id') id: string) {
+    return this.knowledgeBaseService.deleteAnnotation(id);
+  }
+
+  @Get('index/deposits')
+  indexDeposits() {
+    return this.knowledgeBaseService.indexAllDeposits();
   }
 }
