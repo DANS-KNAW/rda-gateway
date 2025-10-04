@@ -3,7 +3,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { z } from 'zod';
 
 export const DatabaseConfigSchema = z.object({
-  DATABASE_HOST: z.hostname(),
+  DATABASE_HOST: z.string().min(1),
   DATABASE_PORT: z.coerce.number().min(1).max(65535),
   DATABASE_USERNAME: z.string().min(1),
   DATABASE_PASSWORD: z.string().min(1),
