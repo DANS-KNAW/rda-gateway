@@ -50,6 +50,9 @@ importers:
       class-validator:
         specifier: ^0.14.2
         version: 0.14.2
+      nanoid:
+        specifier: ^5.1.6
+        version: 5.1.6
       pg:
         specifier: ^8.16.3
         version: 8.16.3
@@ -3202,6 +3205,11 @@ packages:
 
   nan@2.23.0:
     resolution: {integrity: sha512-1UxuyYGdoQHcGg87Lkqm3FzefucTa0NAiOcuRsDmysep3c1LVCRK2krrUDafMWtjSG04htvAmvg96+SDknOmgQ==}
+
+  nanoid@5.1.6:
+    resolution: {integrity: sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
 
   napi-postinstall@0.3.3:
     resolution: {integrity: sha512-uTp172LLXSxuSYHv/kou+f6KW3SMppU9ivthaVTXian9sOt3XM/zHYHpRZiLgQoxeWfYUnslNWQHF1+G71xcow==}
@@ -8162,6 +8170,8 @@ snapshots:
 
   nan@2.23.0:
     optional: true
+
+  nanoid@5.1.6: {}
 
   napi-postinstall@0.3.3: {}
 
