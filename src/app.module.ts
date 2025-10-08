@@ -12,6 +12,8 @@ import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module';
 import databaseConfig from './config/database.config';
 import bullmqConfig from './config/bullmq.config';
 import elasticsearchConfig from './config/elasticsearch.config';
+import { ScheduleModule } from '@nestjs/schedule';
+import { HttpModule } from '@nestjs/axios';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,6 +28,8 @@ import elasticsearchConfig from './config/elasticsearch.config';
     IngestsModule,
     IamModule,
     KnowledgeBaseModule,
+    HttpModule.register({ timeout: 5000 }),
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],
