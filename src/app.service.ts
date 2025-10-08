@@ -76,8 +76,8 @@ export class AppService {
 
       await this.dataSource.query(
         `INSERT INTO annotator_metadata 
-         (version, chrome_zip_url, release_date, is_prerelease, file_size_bytes, sha256_digest)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+         (version, chrome_zip_url, release_date, is_prerelease, file_size_bytes, sha256_digest, name)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           version,
           chromeAsset.browser_download_url,
@@ -85,6 +85,7 @@ export class AppService {
           latestRelease.prerelease,
           chromeAsset.size,
           chromeAsset.digest?.replace('sha256:', '') || null,
+          chromeAsset.name,
         ],
       );
 
