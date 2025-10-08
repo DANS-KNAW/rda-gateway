@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { HttpService } from '@nestjs/axios';
 import { DataSource } from 'typeorm';
@@ -98,9 +103,17 @@ export class AppService {
       const result = await this.dataSource.query(
         'SELECT * FROM annotator_metadata ORDER BY release_date DESC LIMIT 1',
       );
+
+      if (result.length === 0) {
+        throw new NotFoundException('No annotator metadata found');
+      }
+
       return result[0];
     } catch (error) {
-      this.logger.error('Error fetching latest annotator metadata');
+      if (error instanceof HttpException) {
+        this.logger.warn(error.message);
+        throw error;
+      }
     }
   }
 }
