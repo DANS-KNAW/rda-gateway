@@ -440,20 +440,24 @@ export class KnowledgeBaseService {
   }
 
   async getAllIndexDocuments(alias: string, query: object) {
-    const exists = await this.elasticsearchService.indices.existsAlias({
-      name: alias,
-    });
+    try {
+      const exists = await this.elasticsearchService.indices.existsAlias({
+        name: alias,
+      });
 
-    if (!exists) {
-      throw new NotFoundException('Alias does not exist');
+      if (!exists) {
+        throw new NotFoundException('Alias does not exist');
+      }
+
+      const documents = await this.elasticsearchService.search({
+        index: alias,
+        ...query,
+      });
+
+      return documents;
+    } catch (error) {
+      this.logger.error(error);
     }
-
-    const documents = await this.elasticsearchService.search({
-      index: alias,
-      ...query,
-    });
-
-    return documents;
   }
 
   async getDocument(index: string, documentIdentifier: string) {
@@ -486,8 +490,6 @@ export class KnowledgeBaseService {
 
   async createAnnotation(annotation: Annotation) {
     const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXZ');
-
-    console.log(annotation);
 
     const resource = {
       uuid: annotation.resource,
@@ -831,7 +833,7 @@ export class KnowledgeBaseService {
 
       await queryRunner.commitTransaction();
     } catch (error) {
-      console.error('Error creating annotation:', error);
+      this.logger.error('Error creating annotation');
       await queryRunner.rollbackTransaction();
       throw new InternalServerErrorException('Error creating annotation');
     } finally {
