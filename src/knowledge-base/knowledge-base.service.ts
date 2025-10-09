@@ -457,6 +457,7 @@ export class KnowledgeBaseService {
       return documents;
     } catch (error) {
       this.logger.error(error);
+      throw new InternalServerErrorException('Error fetching documents');
     }
   }
 
