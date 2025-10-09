@@ -1,6 +1,7 @@
 import {
   HttpException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -111,10 +112,13 @@ export class AppService {
 
       return result[0];
     } catch (error) {
-      if (error instanceof HttpException) {
-        this.logger.warn(error.message);
+      if (error instanceof NotFoundException) {
         throw error;
       }
+      this.logger.warn(error.message);
+      throw new InternalServerErrorException(
+        'Error fetching annotator metadata',
+      );
     }
   }
 }
