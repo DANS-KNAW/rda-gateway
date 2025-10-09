@@ -15,6 +15,11 @@ export class AppController {
     return this.appService.getAnnotator();
   }
 
+  @Get('annotator/min-version')
+  getAnnotatorMinVersion() {
+    return this.appService.getAnnotatorMinVersion();
+  }
+
   // @Post('annotator')
   // triggerAnnotatorCheck() {
   //   return this.appService.getLatestAnnotatorVersion();

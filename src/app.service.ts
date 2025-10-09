@@ -1,5 +1,5 @@
 import {
-  HttpException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -9,6 +9,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { HttpService } from '@nestjs/axios';
 import { DataSource } from 'typeorm';
 import { firstValueFrom } from 'rxjs';
+import coreConfig from './config/core.config';
+import type { ConfigType } from '@nestjs/config';
 
 // Partial interfaces for GitHub API response. Only the needed fields are included.
 interface GitHubAsset {
@@ -32,6 +34,8 @@ export class AppService {
     'https://api.github.com/repos/DANS-KNAW/rda-annotator/releases';
 
   constructor(
+    @Inject(coreConfig.KEY)
+    private readonly config: ConfigType<typeof coreConfig>,
     private readonly httpService: HttpService,
     private readonly dataSource: DataSource,
   ) {}
@@ -120,5 +124,15 @@ export class AppService {
         'Error fetching annotator metadata',
       );
     }
+  }
+
+  async getAnnotatorMinVersion() {
+    const minVersion = this.config.ANNOTATOR_MIN_VERSION;
+    if (!minVersion) {
+      throw new InternalServerErrorException(
+        'Minimum annotator version is not configured',
+      );
+    }
+    return { minVersion };
   }
 }
