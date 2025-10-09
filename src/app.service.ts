@@ -35,7 +35,7 @@ export class AppService {
     private readonly dataSource: DataSource,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   async getLatestAnnotatorVersion() {
     try {
       this.logger.log('Fetching latest annotator version from GitHub...');
