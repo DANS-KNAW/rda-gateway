@@ -486,6 +486,7 @@ export class KnowledgeBaseService {
         throw new NotFoundException('Document not found');
       }
       this.logger.error(error);
+      throw new InternalServerErrorException('Error fetching document');
     }
   }
 
