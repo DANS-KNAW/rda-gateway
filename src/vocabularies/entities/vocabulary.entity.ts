@@ -36,6 +36,11 @@ export class Vocabulary {
   @PrimaryColumn()
   value_uri: string;
 
+  @IsString()
+  @IsNotEmpty()
+  @Column()
+  namespace: string;
+
   @IsOptional()
   @IsObject()
   @IsNotEmptyObject()

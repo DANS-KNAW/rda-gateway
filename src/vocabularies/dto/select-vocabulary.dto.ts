@@ -9,6 +9,7 @@ export class SelectVocabularyDto extends PartialType(
     'scheme_uri',
     'value_scheme',
     'value_uri',
+    'namespace',
   ] as const),
 ) {
   @IsOptional()

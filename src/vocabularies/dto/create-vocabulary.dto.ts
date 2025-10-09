@@ -6,5 +6,6 @@ export class CreateVocabularyDto extends PickType(Vocabulary, [
   'scheme_uri',
   'value_scheme',
   'value_uri',
+  'namespace',
   'additional_metadata',
 ] as const) {}

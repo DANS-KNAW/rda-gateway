@@ -10,14 +10,13 @@ import { IngestsModule } from './ingests/ingests.module';
 import { IamModule } from './iam/iam.module';
 import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module';
 import databaseConfig from './config/database.config';
-import bullmqConfig from './config/bullmq.config';
 import elasticsearchConfig from './config/elasticsearch.config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [coreConfig, databaseConfig, bullmqConfig, elasticsearchConfig],
+      load: [coreConfig, databaseConfig, elasticsearchConfig],
       skipProcessEnv: true,
       validatePredefined: true,
       ignoreEnvFile: false, // Might want to change to true once fully containerized

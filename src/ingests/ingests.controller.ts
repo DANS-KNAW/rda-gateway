@@ -1,4 +1,25 @@
-import { Controller } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+import { IngestsService } from './ingests.service';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { FilesSanitizePipe } from './pipes/files-sanitize.pipe';
 
 @Controller('ingests')
-export class IngestsController {}
+export class IngestsController {
+  constructor(private readonly ingestsService: IngestsService) {}
+
+  @Post('files')
+  @UseInterceptors(FilesInterceptor('files'))
+  ingest(
+    @Body('excludedColumns') excludedColumns: string[] = [],
+    @UploadedFiles(new FilesSanitizePipe())
+    files: Express.Multer.File[],
+  ) {
+    return this.ingestsService.ingestVocabularies(files, excludedColumns);
+  }
+}
