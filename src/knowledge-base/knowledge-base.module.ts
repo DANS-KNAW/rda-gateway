@@ -18,7 +18,7 @@ import elasticsearchConfig from 'src/config/elasticsearch.config';
         maxRetries: 3,
         requestTimeout: 20000,
         tls: {
-          rejectUnauthorized: config.ELASTIC_REJECT_UNAUTHORIZED,
+          rejectUnauthorized: config.ELASTIC_REJECT_UNAUTHORIZED === 'true',
         },
       }),
       inject: [elasticsearchConfig.KEY],

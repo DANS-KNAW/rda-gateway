@@ -11,8 +11,8 @@ export const ElasticsearchConfigSchema = z.object({
       (val) => val.split(',').every((endpoint) => endpoint.trim().length > 0),
       { message: 'All endpoints must be non-empty' },
     ),
-  ELASTIC_REJECT_UNAUTHORIZED: z.boolean(),
-  ELASTIC_SECURE: z.boolean(),
+  ELASTIC_REJECT_UNAUTHORIZED: z.string().min(1),
+  ELASTIC_SECURE: z.string().min(1),
 });
 
 export const CONFIG_ELASTICSEARCH_TOKEN = Symbol('app:config.elasticsearch');
