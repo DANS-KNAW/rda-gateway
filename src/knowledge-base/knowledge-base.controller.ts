@@ -17,23 +17,14 @@ export class KnowledgeBaseController {
   constructor(private readonly knowledgeBaseService: KnowledgeBaseService) {}
 
   @HttpCode(200)
-  @Post(':index/_search')
-  getAllDocuments(
-    @Param('index') index: string,
-    @Req() req: RawBodyRequest<Request>,
-  ) {
-    return this.knowledgeBaseService.getAllIndexDocuments(
-      index,
-      req.body as object,
-    );
+  @Post('rda/_search')
+  getAllDocuments(@Req() req: RawBodyRequest<Request>) {
+    return this.knowledgeBaseService.getAllIndexDocuments(req.body as object);
   }
 
-  @Get(':index/_source/:document')
-  getDocument(
-    @Param('index') index: string,
-    @Param('document') document: string,
-  ) {
-    return this.knowledgeBaseService.getDocument(index, document);
+  @Get('rda/_source/:document')
+  getDocument(@Param('document') document: string) {
+    return this.knowledgeBaseService.getDocument(document);
   }
 
   @Post('/annotation')
@@ -49,5 +40,10 @@ export class KnowledgeBaseController {
   @Get('index/deposits')
   indexDeposits() {
     return this.knowledgeBaseService.indexAllDeposits();
+  }
+
+  @Get('index/annotations')
+  indexAnnotations() {
+    return this.knowledgeBaseService.indexAllAnnotations();
   }
 }

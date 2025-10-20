@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -8,6 +9,8 @@ import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { DataSource } from 'typeorm';
 import { customAlphabet } from 'nanoid';
 import { Annotation } from './types/annotation.interface';
+import elasticsearchConfig from 'src/config/elasticsearch.config';
+import type { ConfigType } from '@nestjs/config';
 
 @Injectable()
 export class KnowledgeBaseService {
@@ -16,6 +19,8 @@ export class KnowledgeBaseService {
   constructor(
     private dataSource: DataSource,
     private readonly elasticsearchService: ElasticsearchService,
+    @Inject(elasticsearchConfig.KEY)
+    private readonly config: ConfigType<typeof elasticsearchConfig>,
   ) {}
 
   async createDepositDocument() {
@@ -352,12 +357,12 @@ export class KnowledgeBaseService {
 
   async indexExists() {
     const alias = await this.elasticsearchService.indices.existsAlias({
-      name: 'rda',
+      name: this.config.ELASTIC_ALIAS_NAME,
     });
 
     if (!alias) {
       const indice = await this.elasticsearchService.indices.create({
-        index: 'rda-0001',
+        index: this.config.ELASTIC_ALIAS_NAME + '-0001',
         mappings: {
           properties: {
             dc_date: {
@@ -376,7 +381,7 @@ export class KnowledgeBaseService {
 
       if (indice.acknowledged != true) {
         const exists = await this.elasticsearchService.indices.exists({
-          index: 'rda-0001',
+          index: this.config.ELASTIC_ALIAS_NAME + '-0001',
         });
 
         if (!exists) {
@@ -385,13 +390,13 @@ export class KnowledgeBaseService {
       }
 
       const aliasIndice = await this.elasticsearchService.indices.putAlias({
-        index: 'rda-0001',
-        name: 'rda',
+        index: this.config.ELASTIC_ALIAS_NAME + '-0001',
+        name: this.config.ELASTIC_ALIAS_NAME,
       });
 
       if (!aliasIndice.acknowledged) {
         const exists = await this.elasticsearchService.indices.existsAlias({
-          name: 'rda',
+          name: this.config.ELASTIC_ALIAS_NAME,
         });
         if (!exists) {
           throw new Error('Failed to create initial alias');
@@ -415,10 +420,12 @@ export class KnowledgeBaseService {
     this.logger.log('Starting indexing of deposit resources');
 
     const action = await this.elasticsearchService.bulk({
-      index: 'rda-0001',
+      index: this.config.ELASTIC_ALIAS_NAME,
       refresh: true,
       operations: documents.flatMap((doc) => [
-        { index: { _index: 'rda-0001', _id: doc.uuid_rda } },
+        {
+          index: { _index: this.config.ELASTIC_ALIAS_NAME, _id: doc.uuid_rda },
+        },
         doc,
       ]),
     });
@@ -439,10 +446,10 @@ export class KnowledgeBaseService {
     };
   }
 
-  async getAllIndexDocuments(alias: string, query: object) {
+  async getAllIndexDocuments(query: object) {
     try {
       const exists = await this.elasticsearchService.indices.existsAlias({
-        name: alias,
+        name: this.config.ELASTIC_ALIAS_NAME,
       });
 
       if (!exists) {
@@ -450,7 +457,7 @@ export class KnowledgeBaseService {
       }
 
       const documents = await this.elasticsearchService.search({
-        index: alias,
+        index: this.config.ELASTIC_ALIAS_NAME,
         ...query,
       });
 
@@ -461,9 +468,9 @@ export class KnowledgeBaseService {
     }
   }
 
-  async getDocument(index: string, documentIdentifier: string) {
+  async getDocument(documentIdentifier: string) {
     const exists = await this.elasticsearchService.indices.existsAlias({
-      name: index,
+      name: this.config.ELASTIC_ALIAS_NAME,
     });
 
     if (!exists) {
@@ -472,7 +479,7 @@ export class KnowledgeBaseService {
 
     try {
       const document = await this.elasticsearchService.get<unknown>({
-        index: index,
+        index: this.config.ELASTIC_ALIAS_NAME,
         id: documentIdentifier,
       });
 
@@ -823,7 +830,7 @@ export class KnowledgeBaseService {
       };
 
       const result = await this.elasticsearchService.index({
-        index: 'rda-0001',
+        index: this.config.ELASTIC_ALIAS_NAME,
         id: document.uuid_rda,
         document: document,
         refresh: true,
@@ -868,7 +875,7 @@ export class KnowledgeBaseService {
       if (exists) {
         try {
           await this.elasticsearchService.delete({
-            index: 'rda-0001',
+            index: this.config.ELASTIC_ALIAS_NAME,
             id: uuid_rda,
             refresh: true,
           });
@@ -930,5 +937,175 @@ export class KnowledgeBaseService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async indexAllAnnotations() {
+    const aliasReady = await this.indexExists();
+    if (!aliasReady) {
+      throw new Error('Alias is not ready');
+    }
+
+    const annotations = await this.dataSource.query(
+      "SELECT * FROM resource WHERE resource_source = 'Annotation'",
+    );
+
+    this.logger.log(
+      `Starting re-indexing of ${annotations.length} annotations`,
+    );
+    const startTime = Date.now();
+
+    const documents: any[] = [];
+
+    for (const resource of annotations) {
+      const groupsResource = await this.dataSource.query(
+        `SELECT * FROM group_resource WHERE uuid_resource = '${resource.uuid_rda}'`,
+      );
+
+      const interestGroups: any[] = [];
+      const workingGroups: any[] = [];
+
+      for (const gr of groupsResource) {
+        const interestGroup = await this.dataSource.query(
+          `SELECT * FROM interest_group WHERE "uuid_interestGroup" = '${gr.uuid_group}' LIMIT 1`,
+        );
+
+        if (interestGroup.length > 0) {
+          interestGroups.push({ ...interestGroup[0], relation: gr.relation });
+          continue;
+        }
+
+        const workingGroup = await this.dataSource.query(
+          `SELECT * FROM working_group WHERE uuid_working_group = '${gr.uuid_group}' LIMIT 1`,
+        );
+
+        if (workingGroup.length > 0) {
+          workingGroups.push({ ...workingGroup[0], relation: gr.relation });
+        }
+      }
+
+      const pathwaysResource = await this.dataSource.query(
+        `SELECT * FROM resource_pathway WHERE uuid_resource = '${resource.uuid_rda}'`,
+      );
+
+      const pathways: any[] = [];
+      for (const pr of pathwaysResource) {
+        const pathway = await this.dataSource.query(
+          `SELECT * FROM pathway WHERE uuid_pathway = '${pr.uuid_pathway}' LIMIT 1`,
+        );
+        if (pathway.length > 0) {
+          pathways.push(pathway[0]);
+        }
+      }
+
+      const disciplinesResource = await this.dataSource.query(
+        `SELECT * FROM resource_discipline WHERE uuid_resource = '${resource.uuid_rda}'`,
+      );
+
+      const disciplines: any[] = [];
+      for (const dr of disciplinesResource) {
+        const discipline: any[] = await this.dataSource.query(
+          `SELECT * FROM discipline WHERE internal_identifier = '${dr.uuid_disciplines}' LIMIT 1`,
+        );
+        if (discipline.length > 0) {
+          disciplines.push(discipline[0]);
+        }
+      }
+
+      const gorcElementsResource = await this.dataSource.query(
+        `SELECT * FROM resource_gorc_element WHERE uuid_resource = '${resource.uuid_rda}'`,
+      );
+
+      const gorcElements: any[] = [];
+      for (const ge of gorcElementsResource) {
+        const gorcElement: any[] = await this.dataSource.query(
+          `SELECT * FROM gorc_element WHERE uuid_element = '${ge.uuid_element}' LIMIT 1`,
+        );
+        if (gorcElement.length > 0) {
+          gorcElements.push(gorcElement[0]);
+        }
+      }
+
+      const gorcAttributesResource = await this.dataSource.query(
+        `SELECT * FROM resource_gorc_attribute WHERE uuid_resource = '${resource.uuid_rda}'`,
+      );
+
+      const gorcAttributes: any[] = [];
+      for (const ga of gorcAttributesResource) {
+        const gorcAttribute: any[] = await this.dataSource.query(
+          `SELECT * FROM gorc_atribute WHERE uuid_Attribute = '${ga.uuid_Attribute}' LIMIT 1`,
+        );
+        if (gorcAttribute.length > 0) {
+          gorcAttributes.push(gorcAttribute[0]);
+        }
+      }
+
+      let uriType = [];
+      if (resource.uuid_uri_type) {
+        uriType = await this.dataSource.query(
+          `SELECT * FROM uri_type WHERE uuid_uri_type = '${resource.uuid_uri_type}'`,
+        );
+      }
+
+      const resourceKeywords = await this.dataSource.query(
+        `SELECT * FROM resource_keyword WHERE uuid_resource = '${resource.uuid_rda}'`,
+      );
+
+      const keywords: any[] = [];
+      for (const rk of resourceKeywords) {
+        const keyword = await this.dataSource.query(
+          `SELECT * FROM keyword WHERE uuid_keyword = '${rk.uuid_keyword}' LIMIT 1`,
+        );
+        if (keyword.length > 0) {
+          keywords.push(keyword[0]);
+        }
+      }
+
+      documents.push({
+        ...resource,
+        dc_date: resource.dc_date || new Date().toISOString().split('T')[0],
+        interest_groups: interestGroups,
+        working_groups: workingGroups,
+        pathways: pathways,
+        disciplines: disciplines,
+        gorc_elements: gorcElements,
+        gorc_attributes: gorcAttributes,
+        uri_type: uriType,
+        keywords: keywords,
+      });
+    }
+
+    const endTime = Date.now();
+    const timeDiff = endTime - startTime;
+    this.logger.log(
+      `Finished building ${annotations.length} annotation documents in ${timeDiff}ms`,
+    );
+
+    this.logger.log('Starting indexing of annotation resources');
+
+    const action = await this.elasticsearchService.bulk({
+      index: this.config.ELASTIC_ALIAS_NAME,
+      refresh: true,
+      operations: documents.flatMap((doc) => [
+        {
+          index: { _index: this.config.ELASTIC_ALIAS_NAME, _id: doc.uuid_rda },
+        },
+        doc,
+      ]),
+    });
+
+    if (action.errors) {
+      const failedDocs = action.items.filter((item) => {
+        const operation =
+          item.index || item.create || item.update || item.delete;
+        return operation && operation.error;
+      });
+      this.logger.error(`Failed to index ${failedDocs.length} annotations`);
+    }
+
+    return {
+      indexed: action.items.length,
+      errors: action.errors,
+      took: action.took,
+    };
   }
 }

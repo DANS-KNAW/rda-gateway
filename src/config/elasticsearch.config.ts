@@ -13,6 +13,7 @@ export const ElasticsearchConfigSchema = z.object({
     ),
   ELASTIC_REJECT_UNAUTHORIZED: z.string().min(1),
   ELASTIC_SECURE: z.string().min(1),
+  ELASTIC_ALIAS_NAME: z.string().min(1),
 });
 
 export const CONFIG_ELASTICSEARCH_TOKEN = Symbol('app:config.elasticsearch');
@@ -25,4 +26,5 @@ export default registerAs(CONFIG_ELASTICSEARCH_TOKEN, () => ({
   ),
   ELASTIC_REJECT_UNAUTHORIZED: process.env.ELASTIC_REJECT_UNAUTHORIZED,
   ELASTIC_SECURE: process.env.ELASTIC_SECURE,
+  ELASTIC_ALIAS_NAME: process.env.ELASTIC_ALIAS_NAME,
 }));

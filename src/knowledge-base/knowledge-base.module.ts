@@ -7,6 +7,7 @@ import elasticsearchConfig from 'src/config/elasticsearch.config';
 
 @Module({
   imports: [
+    ConfigModule.forFeature(elasticsearchConfig),
     ElasticsearchModule.registerAsync({
       imports: [ConfigModule.forFeature(elasticsearchConfig)],
       useFactory: (config: ConfigType<typeof elasticsearchConfig>) => ({
