@@ -11,6 +11,7 @@ import {
 import type { RawBodyRequest } from '@nestjs/common';
 import { KnowledgeBaseService } from './knowledge-base.service';
 import type { Annotation } from './types/annotation.interface';
+import { CreateMetricDto } from './dto/create-metric.dto';
 
 @Controller('knowledge-base')
 export class KnowledgeBaseController {
@@ -45,5 +46,11 @@ export class KnowledgeBaseController {
   @Get('index/annotations')
   indexAnnotations() {
     return this.knowledgeBaseService.indexAllAnnotations();
+  }
+
+  @HttpCode(201)
+  @Post('metric')
+  createMetric(@Body() body: CreateMetricDto) {
+    return this.knowledgeBaseService.createMetric(body);
   }
 }

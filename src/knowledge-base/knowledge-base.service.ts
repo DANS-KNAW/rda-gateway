@@ -11,6 +11,7 @@ import { customAlphabet } from 'nanoid';
 import { Annotation } from './types/annotation.interface';
 import elasticsearchConfig from 'src/config/elasticsearch.config';
 import type { ConfigType } from '@nestjs/config';
+import { CreateMetricDto } from './dto/create-metric.dto';
 
 @Injectable()
 export class KnowledgeBaseService {
@@ -529,6 +530,7 @@ export class KnowledgeBaseService {
       group_uuid: null,
       changed: null,
       submitter: annotation.submitter,
+      annotation_target: annotation.target,
     };
 
     let document: any = null;
@@ -540,7 +542,7 @@ export class KnowledgeBaseService {
 
     try {
       await queryRunner.query(
-        `INSERT INTO resource (uuid, uuid_link, uuid_rda, title, "alternateTitle", uri, "backupUri", uri2, "backupUri2", pid_lod_type, pid_lod, dc_date, dc_description, dc_language, type, dc_type, card_url, resource_source, fragment, uuid_uri_type, notes, last_update, pathway, pathway_uuid, group_name, group_uuid, changed, submitter) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)`,
+        `INSERT INTO resource (uuid, uuid_link, uuid_rda, title, "alternateTitle", uri, "backupUri", uri2, "backupUri2", pid_lod_type, pid_lod, dc_date, dc_description, dc_language, type, dc_type, card_url, resource_source, fragment, uuid_uri_type, notes, last_update, pathway, pathway_uuid, group_name, group_uuid, changed, submitter, annotation_target) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)`,
         [
           resource.uuid,
           resource.uuid_link,
@@ -570,6 +572,7 @@ export class KnowledgeBaseService {
           resource.group_uuid,
           resource.changed,
           resource.submitter,
+          JSON.stringify(resource.annotation_target),
         ],
       );
 
@@ -817,8 +820,10 @@ export class KnowledgeBaseService {
         });
       }
 
+      const { annotation_target, ...rest } = resource;
+
       document = {
-        ...resource,
+        ...rest,
         interest_groups: interestGroups,
         working_groups: workingGroups,
         pathways: pathways,
@@ -827,6 +832,7 @@ export class KnowledgeBaseService {
         gorc_attributes: gorcAttributes,
         uri_type: uriType,
         keywords: keywords,
+        annotation_target: annotation_target,
       };
 
       const result = await this.elasticsearchService.index({
@@ -1060,8 +1066,10 @@ export class KnowledgeBaseService {
         }
       }
 
+      const { annotation_target, ...rest } = resource;
+
       documents.push({
-        ...resource,
+        ...rest,
         dc_date: resource.dc_date || new Date().toISOString().split('T')[0],
         interest_groups: interestGroups,
         working_groups: workingGroups,
@@ -1071,6 +1079,7 @@ export class KnowledgeBaseService {
         gorc_attributes: gorcAttributes,
         uri_type: uriType,
         keywords: keywords,
+        annotation_target: annotation_target,
       });
     }
 
@@ -1107,5 +1116,37 @@ export class KnowledgeBaseService {
       errors: action.errors,
       took: action.took,
     };
+  }
+
+  async createMetric(metricDto: CreateMetricDto) {
+    try {
+      const result = await this.dataSource.query(
+        `INSERT INTO metric (type, version, browser, browser_version, os, arch, locale, timestamp)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING id, type, version, browser, browser_version, os, arch, locale, timestamp, created_at`,
+        [
+          metricDto.type,
+          metricDto.version,
+          metricDto.browser,
+          metricDto.browserVersion,
+          metricDto.os,
+          metricDto.arch,
+          metricDto.locale,
+          metricDto.timestamp,
+        ],
+      );
+
+      this.logger.log(
+        `Metric created: ${metricDto.type} - ${metricDto.browser} ${metricDto.browserVersion} on ${metricDto.os}`,
+      );
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+      return result[0];
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to create metric: ${errorMessage}`);
+      throw new InternalServerErrorException('Failed to create metric');
+    }
   }
 }
