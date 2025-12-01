@@ -3,7 +3,7 @@ import {
   OmitType,
   PartialType,
   PickType,
-} from '@nestjs/mapped-types';
+} from '@nestjs/swagger';
 import { CreateVocabularyDto } from './create-vocabulary.dto';
 
 export class UpdateVocabularyDto extends IntersectionType(

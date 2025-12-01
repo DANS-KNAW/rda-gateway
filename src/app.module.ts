@@ -7,7 +7,6 @@ import coreConfig from './config/core.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { VocabulariesModule } from './vocabularies/vocabularies.module';
 import { IngestsModule } from './ingests/ingests.module';
-import { IamModule } from './iam/iam.module';
 import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module';
 import databaseConfig from './config/database.config';
 import elasticsearchConfig from './config/elasticsearch.config';
@@ -25,7 +24,6 @@ import { HttpModule } from '@nestjs/axios';
     TypeOrmModule.forRootAsync(databaseConfig.asProvider()),
     VocabulariesModule,
     IngestsModule,
-    IamModule,
     KnowledgeBaseModule,
     HttpModule.register({ timeout: 5000 }),
     ScheduleModule.forRoot(),
