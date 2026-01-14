@@ -174,12 +174,38 @@ export class VocabulariesService {
       });
     }
 
-    const results = await this.vocabularyRepository.find({
-      where: { ...vocab },
-      take: amount ? amount : 50,
-      skip: offset,
-      withDeleted: deleted,
-    });
+    // Use QueryBuilder to enable LIKE search on value_scheme (substring matching)
+    const qb = this.vocabularyRepository.createQueryBuilder('v');
+
+    // Add exact match filters for other fields
+    if (vocab.namespace)
+      qb.andWhere('v.namespace = :namespace', { namespace: vocab.namespace });
+    if (vocab.subject_scheme)
+      qb.andWhere('v.subject_scheme = :subject_scheme', {
+        subject_scheme: vocab.subject_scheme,
+      });
+    if (vocab.scheme_uri)
+      qb.andWhere('v.scheme_uri = :scheme_uri', {
+        scheme_uri: vocab.scheme_uri,
+      });
+    if (vocab.value_uri)
+      qb.andWhere('v.value_uri = :value_uri', { value_uri: vocab.value_uri });
+
+    // Use LIKE for value_scheme to enable substring search
+    if (vocab.value_scheme) {
+      qb.andWhere('LOWER(v.value_scheme) LIKE LOWER(:value_scheme)', {
+        value_scheme: `%${vocab.value_scheme}%`,
+      });
+    }
+
+    if (deleted) {
+      qb.withDeleted();
+    }
+
+    const results = await qb
+      .take(amount || 50)
+      .skip(offset)
+      .getMany();
 
     if (results.length < 1) {
       throw new NotFoundException('No vocabularies found');
@@ -211,7 +237,12 @@ export class VocabulariesService {
 
     const params: any[] = [];
     if (valueScheme) {
-      query += ` WHERE LOWER("${labelField}") LIKE LOWER($1)`;
+      // Search on both label and description fields (if description exists)
+      if (descField) {
+        query += ` WHERE LOWER("${labelField}") LIKE LOWER($1) OR LOWER("${descField}") LIKE LOWER($1)`;
+      } else {
+        query += ` WHERE LOWER("${labelField}") LIKE LOWER($1)`;
+      }
       params.push(`%${valueScheme}%`);
     }
 
