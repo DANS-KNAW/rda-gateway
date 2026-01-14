@@ -74,7 +74,73 @@ export class VocabulariesService {
   }
 
   /**
+   * Mapping of namespaces to their dedicated tables and field names.
+   */
+  private readonly dedicatedTableMap: Record<
+    string,
+    {
+      table: string;
+      idField: string;
+      labelField: string;
+      descField?: string;
+      urlField?: string;
+    }
+  > = {
+    rda_working_groups: {
+      table: 'working_group',
+      idField: 'uuid_working_group',
+      labelField: 'title',
+      descField: 'description',
+      urlField: 'url',
+    },
+    rda_interest_groups: {
+      table: 'interest_group',
+      idField: 'uuid_interestGroup',
+      labelField: 'title',
+      descField: 'description',
+      urlField: 'url',
+    },
+    disciplines: {
+      table: 'discipline',
+      idField: 'internal_identifier',
+      labelField: 'list_item',
+      descField: 'description',
+      urlField: 'url',
+    },
+    gorc_elements: {
+      table: 'gorc_element',
+      idField: 'uuid_element',
+      labelField: 'element',
+      descField: 'description',
+    },
+    gorc_attributes: {
+      table: 'gorc_atribute', // Note: typo in actual table name
+      idField: 'uuid_attribute',
+      labelField: 'attribute',
+      descField: 'description',
+    },
+    rda_pathways: {
+      table: 'pathway',
+      idField: 'uuid_pathway',
+      labelField: 'pathway',
+      descField: 'description',
+    },
+    rda_keywords: {
+      table: 'keyword',
+      idField: 'uuid_keyword',
+      labelField: 'keyword',
+    },
+    rda_resource_types: {
+      table: 'uri_type',
+      idField: 'uuid_uri_type',
+      labelField: 'uri_type',
+      descField: 'description',
+    },
+  };
+
+  /**
    * Retrieves a list of vocabularies based on the provided filter criteria.
+   * Routes to dedicated tables for specific namespaces, falls back to vocabulary table otherwise.
    *
    * @param filter - An object containing optional filtering options
    * @returns {Vocabulary[]} An array of `Vocabulary` entities matching the filter criteria.
@@ -99,6 +165,15 @@ export class VocabulariesService {
       throw new BadRequestException('Deleted must be a boolean');
     }
 
+    // Check if namespace maps to a dedicated table
+    if (vocab.namespace && this.dedicatedTableMap[vocab.namespace]) {
+      return this.findFromDedicatedTable(vocab.namespace, {
+        amount: amount || 500, // Higher limit for dedicated tables (finite lists)
+        offset,
+        valueScheme: vocab.value_scheme,
+      });
+    }
+
     const results = await this.vocabularyRepository.find({
       where: { ...vocab },
       take: amount ? amount : 50,
@@ -111,6 +186,59 @@ export class VocabulariesService {
     }
 
     return results;
+  }
+
+  /**
+   * Query a dedicated table and return results in Vocabulary format.
+   */
+  private async findFromDedicatedTable(
+    namespace: string,
+    options: { amount?: number; offset?: number; valueScheme?: string },
+  ): Promise<Vocabulary[]> {
+    const mapping = this.dedicatedTableMap[namespace];
+    if (!mapping) {
+      throw new BadRequestException(`Unknown namespace: ${namespace}`);
+    }
+
+    const { table, idField, labelField, descField, urlField } = mapping;
+    const { amount = 500, offset = 0, valueScheme } = options;
+
+    // Build query with optional search filter
+    let query = `SELECT "${idField}" as id, "${labelField}" as label`;
+    if (descField) query += `, "${descField}" as description`;
+    if (urlField) query += `, "${urlField}" as url`;
+    query += ` FROM "${table}"`;
+
+    const params: any[] = [];
+    if (valueScheme) {
+      query += ` WHERE LOWER("${labelField}") LIKE LOWER($1)`;
+      params.push(`%${valueScheme}%`);
+    }
+
+    query += ` ORDER BY "${labelField}" ASC`;
+    query += ` LIMIT ${amount} OFFSET ${offset}`;
+
+    const results = await this.vocabularyRepository.manager.query(
+      query,
+      params,
+    );
+
+    if (results.length < 1) {
+      throw new NotFoundException('No vocabularies found');
+    }
+
+    // Transform to Vocabulary format
+    return results.map((row: any) => ({
+      subject_scheme: namespace,
+      scheme_uri: namespace,
+      value_scheme: row.label,
+      value_uri: row.id,
+      namespace: namespace,
+      additional_metadata: {
+        description: row.description || undefined,
+        url: row.url || undefined,
+      },
+    })) as Vocabulary[];
   }
 
   /**

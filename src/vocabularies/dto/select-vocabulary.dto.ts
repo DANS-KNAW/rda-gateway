@@ -32,4 +32,8 @@ export class SelectVocabularyDto extends PartialType(
   @Type(() => Boolean)
   @IsBoolean()
   deleted?: boolean;
+
+  @ApiPropertyOptional({ description: 'Search term to filter results' })
+  @IsOptional()
+  search?: string;
 }
