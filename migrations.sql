@@ -49,3 +49,6 @@ CREATE TABLE IF NOT EXISTS resource_vocabulary (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (uuid_resource, namespace, value_uri)
 );
+
+-- Add submitter_name column to resource table for storing resolved ORCID names
+ALTER TABLE resource ADD COLUMN IF NOT EXISTS submitter_name VARCHAR(255);

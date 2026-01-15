@@ -13,6 +13,7 @@ import { Annotation } from './types/annotation.interface';
 import elasticsearchConfig from 'src/config/elasticsearch.config';
 import type { ConfigType } from '@nestjs/config';
 import { CreateMetricDto } from './dto/create-metric.dto';
+import { OrcidService } from 'src/orcid/orcid.service';
 
 @Injectable()
 export class KnowledgeBaseService {
@@ -23,6 +24,7 @@ export class KnowledgeBaseService {
     private readonly elasticsearchService: ElasticsearchService,
     @Inject(elasticsearchConfig.KEY)
     private readonly config: ConfigType<typeof elasticsearchConfig>,
+    private readonly orcidService: OrcidService,
   ) {}
 
   async createDepositDocument() {
@@ -520,6 +522,22 @@ export class KnowledgeBaseService {
   async createAnnotation(annotation: Annotation) {
     const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXZ');
 
+    // Validate ORCID format and resolve submitter name from ORCID API
+    if (!this.orcidService.isValidOrcid(annotation.submitter)) {
+      throw new BadRequestException(
+        `Invalid ORCID format: ${annotation.submitter}. Expected format: 0000-0000-0000-0000`,
+      );
+    }
+
+    const submitterName = await this.orcidService.lookupName(
+      annotation.submitter,
+    );
+    if (!submitterName) {
+      throw new BadRequestException(
+        `Could not resolve name for ORCID: ${annotation.submitter}. The ORCID may not exist or may not have a public name.`,
+      );
+    }
+
     const resource = {
       uuid: annotation.resource,
       uuid_link: null,
@@ -549,6 +567,7 @@ export class KnowledgeBaseService {
       group_uuid: null,
       changed: null,
       submitter: annotation.submitter,
+      submitter_name: submitterName,
       annotation_target: annotation.target,
     };
 
@@ -561,7 +580,7 @@ export class KnowledgeBaseService {
 
     try {
       await queryRunner.query(
-        `INSERT INTO resource (uuid, uuid_link, uuid_rda, title, "alternateTitle", uri, "backupUri", uri2, "backupUri2", pid_lod_type, pid_lod, dc_date, dc_description, dc_language, type, dc_type, card_url, resource_source, fragment, uuid_uri_type, notes, last_update, pathway, pathway_uuid, group_name, group_uuid, changed, submitter, annotation_target) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)`,
+        `INSERT INTO resource (uuid, uuid_link, uuid_rda, title, "alternateTitle", uri, "backupUri", uri2, "backupUri2", pid_lod_type, pid_lod, dc_date, dc_description, dc_language, type, dc_type, card_url, resource_source, fragment, uuid_uri_type, notes, last_update, pathway, pathway_uuid, group_name, group_uuid, changed, submitter, submitter_name, annotation_target) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30)`,
         [
           resource.uuid,
           resource.uuid_link,
@@ -591,6 +610,7 @@ export class KnowledgeBaseService {
           resource.group_uuid,
           resource.changed,
           resource.submitter,
+          resource.submitter_name,
           JSON.stringify(resource.annotation_target),
         ],
       );

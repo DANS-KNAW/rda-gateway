@@ -4,6 +4,7 @@ import { KnowledgeBaseController } from './knowledge-base.controller';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { ConfigModule, ConfigType } from '@nestjs/config';
 import elasticsearchConfig from 'src/config/elasticsearch.config';
+import { OrcidModule } from 'src/orcid/orcid.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import elasticsearchConfig from 'src/config/elasticsearch.config';
       }),
       inject: [elasticsearchConfig.KEY],
     }),
+    OrcidModule,
   ],
   providers: [KnowledgeBaseService],
   controllers: [KnowledgeBaseController],

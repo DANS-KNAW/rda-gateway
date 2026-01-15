@@ -15,6 +15,7 @@ export interface Annotation {
   working_groups?: Vocab[];
   disciplines?: Vocab[];
   submitter: string;
+  submitter_name?: string;
   open_vocabularies?: Record<string, Vocab[]>;
 }
 
