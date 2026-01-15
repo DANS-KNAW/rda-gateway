@@ -323,6 +323,23 @@ export class KnowledgeBaseService {
         keywords.push(keyword[0]);
       }
 
+      // Fetch custom vocabularies from resource_vocabulary table
+      const resourceVocabularies = await this.dataSource.query(
+        `SELECT rv.*, v.subject_scheme, v.value_scheme
+         FROM resource_vocabulary rv
+         LEFT JOIN vocabulary v ON rv.namespace = v.namespace AND rv.value_uri = v.value_uri
+         WHERE rv.uuid_resource = $1`,
+        [resource.uuid_rda],
+      );
+
+      const customVocabularies: any[] = resourceVocabularies.map((rv: any) => ({
+        namespace: rv.namespace,
+        label: rv.label,
+        value: rv.value_uri,
+        subject_scheme: rv.subject_scheme,
+        value_scheme: rv.value_scheme,
+      }));
+
       const uniqueInstitutes = resourceInstitutions.filter(
         (v, i, a) =>
           a.findIndex((t) => t.uuid_institution === v.uuid_institution) === i,
@@ -345,6 +362,7 @@ export class KnowledgeBaseService {
         relations: relations,
         related_institutions: uniqueInstitutes,
         keywords: keywords,
+        custom_vocabularies: customVocabularies,
         resource_source: 'Deposit',
       });
     }
@@ -1122,6 +1140,23 @@ export class KnowledgeBaseService {
         }
       }
 
+      // Fetch custom vocabularies from resource_vocabulary table
+      const resourceVocabularies = await this.dataSource.query(
+        `SELECT rv.*, v.subject_scheme, v.value_scheme
+         FROM resource_vocabulary rv
+         LEFT JOIN vocabulary v ON rv.namespace = v.namespace AND rv.value_uri = v.value_uri
+         WHERE rv.uuid_resource = $1`,
+        [resource.uuid_rda],
+      );
+
+      const customVocabularies: any[] = resourceVocabularies.map((rv: any) => ({
+        namespace: rv.namespace,
+        label: rv.label,
+        value: rv.value_uri,
+        subject_scheme: rv.subject_scheme,
+        value_scheme: rv.value_scheme,
+      }));
+
       const { annotation_target, ...rest } = resource;
 
       documents.push({
@@ -1135,6 +1170,7 @@ export class KnowledgeBaseService {
         gorc_attributes: gorcAttributes,
         uri_type: uriType,
         keywords: keywords,
+        custom_vocabularies: customVocabularies,
         annotation_target: annotation_target,
       });
     }
