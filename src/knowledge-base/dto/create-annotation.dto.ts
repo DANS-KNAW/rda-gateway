@@ -6,6 +6,7 @@ import {
   ValidateNested,
   IsNumber,
   IsIn,
+  IsObject,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -237,4 +238,12 @@ export class CreateAnnotationDto {
   @IsString()
   @IsNotEmpty()
   submitter: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Open vocabulary items grouped by namespace (e.g., { "momsi": [...], "other_vocab": [...] })',
+  })
+  @IsOptional()
+  @IsObject()
+  open_vocabularies?: Record<string, VocabDto[]>;
 }

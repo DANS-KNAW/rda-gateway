@@ -15,6 +15,7 @@ export interface Annotation {
   working_groups?: Vocab[];
   disciplines?: Vocab[];
   submitter: string;
+  open_vocabularies?: Record<string, Vocab[]>;
 }
 
 interface Vocab {
@@ -67,9 +68,25 @@ export interface RangeSelector {
 }
 
 /**
+ * Identifies a specific page in a PDF document.
+ * Used in combination with other selectors for PDF annotations.
+ */
+export interface PageSelector {
+  type: 'PageSelector';
+  /** Zero-based page index */
+  index: number;
+  /** Optional human-readable page label */
+  label?: string;
+}
+
+/**
  * Union type of all supported selector types
  */
-export type Selector = TextQuoteSelector | TextPositionSelector | RangeSelector;
+export type Selector =
+  | TextQuoteSelector
+  | TextPositionSelector
+  | RangeSelector
+  | PageSelector;
 
 /**
  * The target of an annotation, containing multiple selector strategies

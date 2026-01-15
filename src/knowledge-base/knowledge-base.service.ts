@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -820,6 +821,55 @@ export class KnowledgeBaseService {
         });
       }
 
+      // Handle open vocabularies (generic - any namespace from vocabulary table)
+      const customVocabularies: any[] = [];
+      if (annotation.open_vocabularies) {
+        for (const [namespace, items] of Object.entries(
+          annotation.open_vocabularies,
+        )) {
+          // Validate namespace exists in vocabulary table
+          const namespaceExists = await queryRunner.query(
+            `SELECT 1 FROM vocabulary WHERE namespace = $1 LIMIT 1`,
+            [namespace],
+          );
+
+          if (namespaceExists.length < 1) {
+            throw new BadRequestException(
+              `Unknown vocabulary namespace: ${namespace}`,
+            );
+          }
+
+          // Process each item in this namespace
+          for (const item of items || []) {
+            // Validate the specific vocabulary item exists
+            const vocabulary = await queryRunner.query(
+              `SELECT * FROM vocabulary WHERE namespace = $1 AND value_uri = $2 LIMIT 1`,
+              [namespace, item.value],
+            );
+
+            if (vocabulary.length < 1) {
+              throw new NotFoundException(
+                `Vocabulary item not found: ${item.value} in namespace ${namespace}`,
+              );
+            }
+
+            // Store relationship
+            await queryRunner.query(
+              `INSERT INTO resource_vocabulary (uuid_resource, namespace, value_uri, label) VALUES ($1, $2, $3, $4)`,
+              [resource.uuid_rda, namespace, item.value, item.label],
+            );
+
+            customVocabularies.push({
+              namespace,
+              label: item.label,
+              value: item.value,
+              subject_scheme: vocabulary[0].subject_scheme,
+              value_scheme: vocabulary[0].value_scheme,
+            });
+          }
+        }
+      }
+
       const { annotation_target, ...rest } = resource;
 
       document = {
@@ -832,6 +882,7 @@ export class KnowledgeBaseService {
         gorc_attributes: gorcAttributes,
         uri_type: uriType,
         keywords: keywords,
+        custom_vocabularies: customVocabularies,
         annotation_target: annotation_target,
       };
 
@@ -920,6 +971,11 @@ export class KnowledgeBaseService {
 
       await queryRunner.query(
         `DELETE FROM resource_keyword WHERE uuid_resource = $1`,
+        [uuid_rda],
+      );
+
+      await queryRunner.query(
+        `DELETE FROM resource_vocabulary WHERE uuid_resource = $1`,
         [uuid_rda],
       );
 

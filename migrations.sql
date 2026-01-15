@@ -39,3 +39,13 @@ CREATE TABLE IF NOT EXISTS annotator_metadata (
 
 -- Add annotation_target column to resource table
 ALTER TABLE resource ADD COLUMN IF NOT EXISTS annotation_target JSONB;
+
+-- Link table for resources to open vocabularies (generic vocabularies from vocabulary table)
+CREATE TABLE IF NOT EXISTS resource_vocabulary (
+    uuid_resource VARCHAR NOT NULL,
+    namespace VARCHAR NOT NULL,
+    value_uri VARCHAR NOT NULL,
+    label VARCHAR NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (uuid_resource, namespace, value_uri)
+);

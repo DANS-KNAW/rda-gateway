@@ -16,7 +16,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { KnowledgeBaseService } from './knowledge-base.service';
-import type { Annotation } from './types/annotation.interface';
+import { CreateAnnotationDto } from './dto/create-annotation.dto';
 import { CreateMetricDto } from './dto/create-metric.dto';
 
 @ApiTags('Knowledge Base')
@@ -40,7 +40,7 @@ export class KnowledgeBaseController {
 
   @Post('/annotation')
   @ApiOperation({ summary: 'Create an annotation' })
-  createAnnotation(@Body() body: Annotation) {
+  createAnnotation(@Body() body: CreateAnnotationDto) {
     return this.knowledgeBaseService.createAnnotation(body);
   }
 
