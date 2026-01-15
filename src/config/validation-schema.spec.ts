@@ -7,6 +7,7 @@ describe('Validation Schema', () => {
     env = {
       NODE_ENV: 'development',
       API_PORT: 3000,
+      ANNOTATOR_MIN_VERSION: '1.0.0',
 
       AUTH_STRATEGY: 'keycloak',
       KEYCLOAK_CLIENT_ID: 'rda-auth',
@@ -17,9 +18,12 @@ describe('Validation Schema', () => {
       DATABASE_PASSWORD: 'postgres',
       DATABASE_NAME: 'rda_gateway',
 
-      REDIS_HOST: 'localhost',
-      REDIS_PORT: 6379,
-      REDIS_PASSWORD: 'redispassword',
+      ELASTIC_USERNAME: 'elastic',
+      ELASTIC_PASSWORD: 'elasticpassword',
+      ELASTIC_NODE_ENDPOINTS: 'http://localhost:9200',
+      ELASTIC_REJECT_UNAUTHORIZED: 'false',
+      ELASTIC_SECURE: 'false',
+      ELASTIC_ALIAS_NAME: 'annotations',
     };
   });
 
@@ -110,15 +114,6 @@ describe('Validation Schema', () => {
       expect(result.error).toBeDefined();
     });
 
-    it('should reject invalid database hostname value', () => {
-      const result = EnvironmentSchema.safeParse({
-        ...env,
-        DATABASE_HOST: 'invalid_host@name',
-      });
-
-      expect(result.error).toBeDefined();
-    });
-
     it('should reject missing database port', () => {
       const { DATABASE_PORT, ...envWithoutDbPort } = env;
       void DATABASE_PORT;
@@ -194,68 +189,6 @@ describe('Validation Schema', () => {
       const result = EnvironmentSchema.safeParse({
         ...env,
         DATABASE_NAME: '',
-      });
-
-      expect(result.error).toBeDefined();
-    });
-  });
-
-  describe('BullMQ', () => {
-    it('should reject missing Redis hostname', () => {
-      const { REDIS_HOST, ...envWithoutRedisHost } = env;
-      void REDIS_HOST;
-
-      const result = EnvironmentSchema.safeParse({
-        ...envWithoutRedisHost,
-      });
-
-      expect(result.error).toBeDefined();
-    });
-
-    it('should reject invalid Redis hostname value', () => {
-      const result = EnvironmentSchema.safeParse({
-        ...env,
-        REDIS_HOST: 'invalid_host@name',
-      });
-
-      expect(result.error).toBeDefined();
-    });
-
-    it('should reject missing Redis port', () => {
-      const { REDIS_PORT, ...envWithoutRedisPort } = env;
-      void REDIS_PORT;
-
-      const result = EnvironmentSchema.safeParse({
-        ...envWithoutRedisPort,
-      });
-
-      expect(result.error).toBeDefined();
-    });
-
-    it('should reject invalid Redis port value', () => {
-      const result = EnvironmentSchema.safeParse({
-        ...env,
-        REDIS_PORT: 70000,
-      });
-
-      expect(result.error).toBeDefined();
-    });
-
-    it('should reject missing Redis password', () => {
-      const { REDIS_PASSWORD, ...envWithoutRedisPassword } = env;
-      void REDIS_PASSWORD;
-
-      const result = EnvironmentSchema.safeParse({
-        ...envWithoutRedisPassword,
-      });
-
-      expect(result.error).toBeDefined();
-    });
-
-    it('should reject empty Redis password', () => {
-      const result = EnvironmentSchema.safeParse({
-        ...env,
-        REDIS_PASSWORD: '',
       });
 
       expect(result.error).toBeDefined();

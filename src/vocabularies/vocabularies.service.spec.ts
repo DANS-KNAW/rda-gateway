@@ -28,6 +28,7 @@ describe('VocabulariesService', () => {
     softDelete: jest.Mock;
     restore: jest.Mock;
     delete: jest.Mock;
+    createQueryBuilder: jest.Mock;
     manager: {
       transaction: jest.Mock;
     };
@@ -39,12 +40,21 @@ describe('VocabulariesService', () => {
     update: jest.fn(),
   };
 
+  const mockQueryBuilder = {
+    andWhere: jest.fn().mockReturnThis(),
+    withDeleted: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    getMany: jest.fn(),
+  };
+
   const repositoryMock: RepoMock = {
     create: jest.fn(),
     find: jest.fn(),
     softDelete: jest.fn(),
     restore: jest.fn(),
     delete: jest.fn(),
+    createQueryBuilder: jest.fn(() => mockQueryBuilder),
     manager: {
       transaction: jest.fn(
         async (cb: (m: typeof manager) => Promise<Vocabulary>) => cb(manager),
@@ -57,6 +67,7 @@ describe('VocabulariesService', () => {
     subject_scheme: 'Test Scheme',
     value_uri: 'http://example.com/value',
     value_scheme: 'Test Value Scheme',
+    namespace: 'test-namespace',
     additional_metadata: { key: 'value' },
     deleted_at: null,
     updated_at: new Date(),
@@ -68,6 +79,7 @@ describe('VocabulariesService', () => {
     subject_scheme: dummyVocabulary.subject_scheme,
     value_uri: dummyVocabulary.value_uri,
     value_scheme: dummyVocabulary.value_scheme,
+    namespace: dummyVocabulary.namespace,
     additional_metadata: dummyVocabulary.additional_metadata,
   };
 
@@ -97,6 +109,12 @@ describe('VocabulariesService', () => {
     repositoryMock.softDelete.mockReset();
     repositoryMock.restore.mockReset();
     repositoryMock.delete.mockReset();
+    repositoryMock.createQueryBuilder.mockClear();
+    mockQueryBuilder.andWhere.mockClear();
+    mockQueryBuilder.withDeleted.mockClear();
+    mockQueryBuilder.take.mockClear();
+    mockQueryBuilder.skip.mockClear();
+    mockQueryBuilder.getMany.mockReset();
 
     loggerErrorSpy.mockClear();
   });
@@ -195,15 +213,13 @@ describe('VocabulariesService', () => {
         ...dummyVocabulary,
         value_uri: `${dummyVocabulary.value_uri}${i}`,
       }));
-      repositoryMock.find.mockResolvedValue(vocabularies.slice(0, 50));
+      mockQueryBuilder.getMany.mockResolvedValue(vocabularies.slice(0, 50));
 
       const results = await service.find({});
 
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: {},
-        take: 50,
-        skip: undefined,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(50);
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(results.length).toBe(50);
       expect(results).toEqual(vocabularies.slice(0, 50));
     });
@@ -223,20 +239,14 @@ describe('VocabulariesService', () => {
         ...dummyVocabulary,
         value_uri: `${dummyVocabulary.value_uri}${i}`,
       }));
-      repositoryMock.find.mockResolvedValue(vocabularies.slice(5, 15));
+      mockQueryBuilder.getMany.mockResolvedValue(vocabularies.slice(5, 15));
 
       const results = await service.find(filter);
 
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: {
-          subject_scheme: filter.subject_scheme,
-          scheme_uri: filter.scheme_uri,
-          value_uri: undefined,
-        },
-        take: 10,
-        skip: 5,
-        withDeleted: false,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
+      expect(mockQueryBuilder.skip).toHaveBeenCalledWith(5);
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(results.length).toBe(10);
       expect(results).toEqual(vocabularies.slice(5, 15));
     });
@@ -249,20 +259,13 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      mockQueryBuilder.getMany.mockResolvedValue([dummyVocabulary]);
 
       const results = await service.find(filter);
 
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: {
-          subject_scheme: filter.subject_scheme,
-          scheme_uri: filter.scheme_uri,
-          value_uri: filter.value_uri,
-          value_scheme: filter.value_scheme,
-        },
-        take: 50,
-        skip: undefined,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(50);
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(results.length).toBe(1);
       expect(results).toEqual([dummyVocabulary]);
     });
@@ -274,22 +277,14 @@ describe('VocabulariesService', () => {
         value_uri: dummyVocabulary.value_uri,
       };
 
-      repositoryMock.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await expect(service.find(filter)).rejects.toThrow(
         new NotFoundException('No vocabularies found'),
       );
 
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: {
-          subject_scheme: filter.subject_scheme,
-          scheme_uri: filter.scheme_uri,
-          value_uri: filter.value_uri,
-          value_scheme: filter.value_scheme,
-        },
-        take: 50,
-        skip: undefined,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(loggerErrorSpy).not.toHaveBeenCalled();
     });
 
@@ -316,7 +311,7 @@ describe('VocabulariesService', () => {
         additional_metadata: { key: 'newValue' },
       };
 
-      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      mockQueryBuilder.getMany.mockResolvedValue([dummyVocabulary]);
       manager.update.mockResolvedValue({
         generatedMaps: [],
         raw: [],
@@ -356,7 +351,7 @@ describe('VocabulariesService', () => {
         additional_metadata: { key: 'newValue' },
       };
 
-      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      mockQueryBuilder.getMany.mockResolvedValue([dummyVocabulary]);
       manager.update.mockResolvedValue({
         generatedMaps: [],
         raw: [],
@@ -390,7 +385,7 @@ describe('VocabulariesService', () => {
         additional_metadata: { key: 'newValue' },
       };
 
-      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      mockQueryBuilder.getMany.mockResolvedValue([dummyVocabulary]);
       manager.update.mockResolvedValue({
         generatedMaps: [],
         raw: [],
@@ -434,21 +429,13 @@ describe('VocabulariesService', () => {
         additional_metadata: { key: 'newValue' },
       };
 
-      repositoryMock.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
       await expect(service.update(updateDto)).rejects.toThrow(
         new NotFoundException('No vocabularies found'),
       );
 
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: {
-          subject_scheme: updateDto.subject_scheme,
-          scheme_uri: updateDto.scheme_uri,
-          value_uri: updateDto.value_uri,
-          value_scheme: updateDto.value_scheme,
-        },
-        take: 1,
-        skip: undefined,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(manager.update).not.toHaveBeenCalled();
       expect(manager.findOne).not.toHaveBeenCalled();
       expect(loggerErrorSpy).not.toHaveBeenCalled();
@@ -464,16 +451,13 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      mockQueryBuilder.getMany.mockResolvedValue([dummyVocabulary]);
       repositoryMock.softDelete.mockResolvedValue({ affected: 1 });
 
       await expect(service.archive(identifiers)).resolves.toBe(undefined);
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.withDeleted).toHaveBeenCalled();
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.softDelete).toHaveBeenCalledWith(identifiers);
     });
 
@@ -485,17 +469,13 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await expect(service.archive(identifiers)).rejects.toThrow(
         new NotFoundException('No vocabularies found'),
       );
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.softDelete).not.toHaveBeenCalled();
       expect(loggerErrorSpy).not.toHaveBeenCalled();
     });
@@ -508,18 +488,14 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([
+      mockQueryBuilder.getMany.mockResolvedValue([
         { ...dummyVocabulary, deleted_at: new Date().toISOString() },
       ]);
       await expect(service.archive(identifiers)).rejects.toThrow(
         new BadRequestException('Vocabulary is already archived'),
       );
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.softDelete).not.toHaveBeenCalled();
       expect(loggerErrorSpy).not.toHaveBeenCalled();
     });
@@ -532,17 +508,13 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      mockQueryBuilder.getMany.mockResolvedValue([dummyVocabulary]);
       repositoryMock.softDelete.mockResolvedValue({ affected: 0 });
       await expect(service.archive(identifiers)).rejects.toThrow(
         new InternalServerErrorException('Failure archiving vocabulary'),
       );
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.softDelete).toHaveBeenCalledWith(identifiers);
       expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
     });
@@ -557,19 +529,16 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([
+      mockQueryBuilder.getMany.mockResolvedValue([
         { ...dummyVocabulary, deleted_at: new Date().toISOString() },
       ]);
       repositoryMock.restore.mockResolvedValue({ affected: 1 });
 
       const result = await service.restore(identifiers);
 
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.withDeleted).toHaveBeenCalled();
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.restore).toHaveBeenCalledWith(identifiers);
       expect(result).toBeUndefined();
     });
@@ -582,17 +551,13 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await expect(service.restore(identifiers)).rejects.toThrow(
         new NotFoundException('No vocabularies found'),
       );
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.restore).not.toHaveBeenCalled();
       expect(loggerErrorSpy).not.toHaveBeenCalled();
     });
@@ -605,17 +570,13 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      mockQueryBuilder.getMany.mockResolvedValue([dummyVocabulary]);
 
       await expect(service.restore(identifiers)).rejects.toThrow(
         new BadRequestException('Vocabulary is not archived'),
       );
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.restore).not.toHaveBeenCalled();
       expect(loggerErrorSpy).not.toHaveBeenCalled();
     });
@@ -628,7 +589,7 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([
+      mockQueryBuilder.getMany.mockResolvedValue([
         { ...dummyVocabulary, deleted_at: new Date().toISOString() },
       ]);
       repositoryMock.restore.mockResolvedValue({ affected: 0 });
@@ -636,12 +597,8 @@ describe('VocabulariesService', () => {
       await expect(service.restore(identifiers)).rejects.toThrow(
         new InternalServerErrorException('Failure restoring vocabulary'),
       );
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.restore).toHaveBeenCalledWith(identifiers);
       expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
     });
@@ -656,19 +613,16 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([
+      mockQueryBuilder.getMany.mockResolvedValue([
         { ...dummyVocabulary, deleted_at: new Date().toISOString() },
       ]);
       repositoryMock.delete = jest.fn().mockResolvedValue({ affected: 1 });
 
       const result = await service.remove(identifiers);
 
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.withDeleted).toHaveBeenCalled();
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.delete).toHaveBeenCalledWith(identifiers);
       expect(result).toBeUndefined();
     });
@@ -681,17 +635,13 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([]);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await expect(service.remove(identifiers)).rejects.toThrow(
         new NotFoundException('No vocabularies found'),
       );
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.delete).not.toHaveBeenCalled();
       expect(loggerErrorSpy).not.toHaveBeenCalled();
     });
@@ -704,18 +654,14 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([dummyVocabulary]);
+      mockQueryBuilder.getMany.mockResolvedValue([dummyVocabulary]);
       await expect(service.remove(identifiers)).rejects.toThrow(
         new BadRequestException(
           'Vocabulary must be archived before permanent deletion',
         ),
       );
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.delete).not.toHaveBeenCalled();
       expect(loggerErrorSpy).not.toHaveBeenCalled();
     });
@@ -728,7 +674,7 @@ describe('VocabulariesService', () => {
         value_scheme: dummyVocabulary.value_scheme,
       };
 
-      repositoryMock.find.mockResolvedValue([
+      mockQueryBuilder.getMany.mockResolvedValue([
         { ...dummyVocabulary, deleted_at: new Date().toISOString() },
       ]);
       repositoryMock.delete = jest.fn().mockResolvedValue({ affected: 0 });
@@ -736,12 +682,8 @@ describe('VocabulariesService', () => {
       await expect(service.remove(identifiers)).rejects.toThrow(
         new InternalServerErrorException('Failure deleting vocabulary'),
       );
-      expect(repositoryMock.find).toHaveBeenCalledWith({
-        where: identifiers,
-        take: 1,
-        skip: undefined,
-        withDeleted: true,
-      });
+      expect(repositoryMock.createQueryBuilder).toHaveBeenCalledWith('v');
+      expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(repositoryMock.delete).toHaveBeenCalledWith(identifiers);
       expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
     });

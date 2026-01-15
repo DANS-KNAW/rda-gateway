@@ -120,13 +120,13 @@ describe('KnowledgeBaseService', () => {
         mockOrcidService.isValidOrcid.mockReturnValue(true);
         mockOrcidService.lookupName.mockResolvedValue(null);
 
-        await expect(
-          service.createAnnotation(validAnnotation),
-        ).rejects.toThrow(BadRequestException);
+        await expect(service.createAnnotation(validAnnotation)).rejects.toThrow(
+          BadRequestException,
+        );
 
-        await expect(
-          service.createAnnotation(validAnnotation),
-        ).rejects.toThrow(/Could not resolve name for ORCID/);
+        await expect(service.createAnnotation(validAnnotation)).rejects.toThrow(
+          /Could not resolve name for ORCID/,
+        );
 
         expect(mockOrcidService.isValidOrcid).toHaveBeenCalledWith(
           '0000-0002-1825-0097',

@@ -13,6 +13,7 @@ process.env.API_PORT = 3000;
 process.env.NODE_ENV = 'development';
 process.env.AUTH_STRATEGY = 'keycloak';
 process.env.KEYCLOAK_CLIENT_ID = 'rda-auth';
+process.env.ANNOTATOR_MIN_VERSION = '1.0.0';
 
 // Set placeholder database variables (will be overridden in tests)
 process.env.DATABASE_HOST = 'localhost';
@@ -21,6 +22,10 @@ process.env.DATABASE_USERNAME = 'test';
 process.env.DATABASE_PASSWORD = 'test';
 process.env.DATABASE_NAME = 'test';
 
-process.env.REDIS_HOST = 'localhost';
-process.env.REDIS_PORT = 6379;
-process.env.REDIS_PASSWORD = 'test';
+// Set Elasticsearch variables
+process.env.ELASTIC_USERNAME = 'elastic';
+process.env.ELASTIC_PASSWORD = 'test';
+process.env.ELASTIC_NODE_ENDPOINTS = 'http://localhost:9200';
+process.env.ELASTIC_REJECT_UNAUTHORIZED = 'false';
+process.env.ELASTIC_SECURE = 'false';
+process.env.ELASTIC_ALIAS_NAME = 'annotations';
