@@ -63,9 +63,9 @@ describe('OrcidService', () => {
     });
 
     it('should return false for ORCID URIs', () => {
-      expect(service.isValidOrcid('https://orcid.org/0000-0002-1825-0097')).toBe(
-        false,
-      );
+      expect(
+        service.isValidOrcid('https://orcid.org/0000-0002-1825-0097'),
+      ).toBe(false);
     });
   });
 
