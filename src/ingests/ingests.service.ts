@@ -109,12 +109,14 @@ export class IngestsService {
               `Created vocabulary entry: ${column} -> ${value}`,
             );
           } catch (error) {
+            const errorMessage =
+              error instanceof Error ? error.message : 'Unknown error';
             this.logger.error(
-              `Failed to create vocabulary for ${column}:"${value}": ${error.message}`,
+              `Failed to create vocabulary for ${column}:"${value}": ${errorMessage}`,
             );
             errors.push({
               record: { column, value },
-              error: error.message,
+              error: errorMessage,
             });
           }
         }
@@ -131,7 +133,9 @@ export class IngestsService {
         error: errors.length > 0 ? errors : undefined,
       };
     } catch (error) {
-      this.logger.error(`Error processing CSV file: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error processing CSV file: ${errorMessage}`);
       throw error;
     }
   }
@@ -148,7 +152,10 @@ export class IngestsService {
       switch (file.mimetype) {
         case 'text/csv':
           this.logger.log(`Selected CSV processing for ${file.originalname}`);
-          return this.processCSVFile.bind(this);
+          return this.processCSVFile.bind(this) as (
+            file: Express.Multer.File,
+            excludedColumns: string[],
+          ) => Promise<IngestResult>;
 
         default:
           this.logger.warn(
@@ -157,9 +164,9 @@ export class IngestsService {
           return undefined;
       }
     } catch (error) {
-      this.logger.error(
-        `Error selecting processing strategy: ${error.message}`,
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error selecting processing strategy: ${errorMessage}`);
       return undefined;
     }
   }
@@ -194,14 +201,16 @@ export class IngestsService {
           ...result,
         });
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
         this.logger.error(
-          `Failed to process file ${file.originalname}: ${error.message}`,
+          `Failed to process file ${file.originalname}: ${errorMessage}`,
         );
         results.push({
           filename: file.originalname,
           success: 0,
           failed: 0,
-          error: error.message,
+          error: errorMessage,
         });
       }
     }

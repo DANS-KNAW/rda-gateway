@@ -14,6 +14,14 @@ import { ExceptionHandler } from '../common/decorators/exception-handler.decorat
 import { SelectVocabularyDto } from './dto/select-vocabulary.dto';
 import { IdVocabularyDto } from './dto/id-vocabulary.dto';
 
+// Interface for dedicated table query results
+interface DedicatedTableRow {
+  id: string;
+  label: string;
+  description?: string;
+  url?: string;
+}
+
 @Injectable()
 export class VocabulariesService {
   private readonly logger = new Logger(VocabulariesService.name);
@@ -235,7 +243,7 @@ export class VocabulariesService {
     if (urlField) query += `, "${urlField}" as url`;
     query += ` FROM "${table}"`;
 
-    const params: any[] = [];
+    const params: string[] = [];
     if (valueScheme) {
       // Search on both label and description fields (if description exists)
       if (descField) {
@@ -249,17 +257,16 @@ export class VocabulariesService {
     query += ` ORDER BY "${labelField}" ASC`;
     query += ` LIMIT ${amount} OFFSET ${offset}`;
 
-    const results = await this.vocabularyRepository.manager.query(
-      query,
-      params,
-    );
+    const results = await this.vocabularyRepository.manager.query<
+      DedicatedTableRow[]
+    >(query, params);
 
-    if (results.length < 1) {
+    if (!Array.isArray(results) || results.length < 1) {
       throw new NotFoundException('No vocabularies found');
     }
 
     // Transform to Vocabulary format
-    return results.map((row: any) => ({
+    return results.map((row) => ({
       subject_scheme: namespace,
       scheme_uri: namespace,
       value_scheme: row.label,

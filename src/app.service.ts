@@ -27,6 +27,17 @@ interface GitHubRelease {
   assets: GitHubAsset[];
 }
 
+// Interface for annotator metadata query result
+interface AnnotatorMetadataRow {
+  version: string;
+  chrome_zip_url: string;
+  release_date: string;
+  is_prerelease: boolean;
+  file_size_bytes: number;
+  sha256_digest: string | null;
+  name: string;
+}
+
 @Injectable()
 export class AppService {
   private readonly logger = new Logger(AppService.name);
@@ -69,12 +80,12 @@ export class AppService {
         throw new Error(`No Chrome zip found for version ${version}`);
       }
 
-      const existing = await this.dataSource.query(
+      const existing = await this.dataSource.query<{ version: string }[]>(
         'SELECT version FROM annotator_metadata WHERE version = $1',
         [version],
       );
 
-      if (existing.length > 0) {
+      if (Array.isArray(existing) && existing.length > 0) {
         this.logger.log(`Version ${version} already exists in database`);
         return;
       }
@@ -104,13 +115,13 @@ export class AppService {
     return 'Hello World!';
   }
 
-  async getAnnotator() {
+  async getAnnotator(): Promise<AnnotatorMetadataRow> {
     try {
-      const result = await this.dataSource.query(
+      const result = await this.dataSource.query<AnnotatorMetadataRow[]>(
         'SELECT * FROM annotator_metadata ORDER BY release_date DESC LIMIT 1',
       );
 
-      if (result.length === 0) {
+      if (!Array.isArray(result) || result.length === 0) {
         throw new NotFoundException('No annotator metadata found');
       }
 
@@ -119,14 +130,16 @@ export class AppService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.warn(error.message);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(errorMessage);
       throw new InternalServerErrorException(
         'Error fetching annotator metadata',
       );
     }
   }
 
-  async getAnnotatorMinVersion() {
+  getAnnotatorMinVersion(): { minVersion: string } {
     const minVersion = this.config.ANNOTATOR_MIN_VERSION;
     if (!minVersion) {
       throw new InternalServerErrorException(

@@ -146,7 +146,8 @@ interface Keyword {
 }
 
 interface Relation {
-  // Define structure if relations are present in your data
+  uuid_relation: string;
+  relation: string;
 }
 
 // export interface ElasticDocument {
@@ -187,7 +188,7 @@ interface Relation {
 //   keywords: Keyword[];
 // }
 
-interface ElasticDocument {
+export interface ElasticDocument {
   uuid: string;
   uuid_link: string | null;
   uuid_rda: string;

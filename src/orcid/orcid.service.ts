@@ -73,7 +73,9 @@ export class OrcidService {
 
       return result;
     } catch (error) {
-      this.logger.error(`Failed to lookup ORCID ${orcidId}: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to lookup ORCID ${orcidId}: ${errorMessage}`);
       // Cache failure with short TTL (1 minute) to allow retry
       this.cache.set(orcidId, {
         name: null,

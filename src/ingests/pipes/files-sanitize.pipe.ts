@@ -10,7 +10,8 @@ export class FilesSanitizePipe implements PipeTransform {
   private readonly maxFileSize = 100 * 1024 * 1024; // 100 MB
   private readonly maxFileCount = 50;
 
-  transform(value: Express.Multer.File[], metadata: ArgumentMetadata) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Required by PipeTransform interface
+  transform(value: Express.Multer.File[], _metadata: ArgumentMetadata) {
     if (!value || value.length === 0) {
       throw new BadRequestException('No files uploaded');
     }
@@ -24,13 +25,13 @@ export class FilesSanitizePipe implements PipeTransform {
     const getFileTypeByExtension = (filename: string) => {
       const ext = filename.split('.').pop()?.toLowerCase();
       return Object.entries(FILE_INFO).find(
-        ([_, info]) => info.extension === ext,
+        ([, info]) => info.extension === ext,
       )?.[0];
     };
 
     const getFileTypeByMimeType = (mimetype: string) => {
       return Object.entries(FILE_INFO).find(
-        ([_, info]) => info.mimetype === mimetype,
+        ([, info]) => info.mimetype === mimetype,
       )?.[0];
     };
 
@@ -66,6 +67,7 @@ export class FilesSanitizePipe implements PipeTransform {
         );
       }
 
+      // eslint-disable-next-line no-control-regex -- Intentionally matches control characters for security
       const dangerousChars = /[<>:"/\\|?*\x00-\x1f]/;
       const reservedNames = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i;
       if (

@@ -14,6 +14,42 @@ import elasticsearchConfig from 'src/config/elasticsearch.config';
 import type { ConfigType } from '@nestjs/config';
 import { CreateMetricDto } from './dto/create-metric.dto';
 import { OrcidService } from 'src/orcid/orcid.service';
+import {
+  ResourceRow,
+  SubjectResourceRow,
+  WorkflowRelationRow,
+  WorkflowRow,
+  RightsResourceRow,
+  RightRow,
+  GorcElementResourceRow,
+  GorcElementRow,
+  GorcAttributeResourceRow,
+  GorcAttributeRow,
+  DisciplineResourceRow,
+  DisciplineRow,
+  IndividualResourceRow,
+  IndividualRow,
+  InstitutionMemberRow,
+  InstitutionRow,
+  InstitutionOrgTypeRow,
+  OrgTypeRow,
+  InstitutionRoleRelationRow,
+  InstitutionRoleRow,
+  InstitutionCountryRow,
+  IndividualGroupRow,
+  InterestGroupRow,
+  WorkingGroupRow,
+  GroupResourceRow,
+  PathwayResourceRow,
+  PathwayRow,
+  ResourceRelationRow,
+  RelationRow,
+  ResourceKeywordRow,
+  KeywordRow,
+  ResourceVocabularyRow,
+  UriTypeRow,
+  MetricRow,
+} from './types/database-rows.interface';
 
 @Injectable()
 export class KnowledgeBaseService {
@@ -28,7 +64,9 @@ export class KnowledgeBaseService {
   ) {}
 
   async createDepositDocument() {
-    const rawResources = await this.dataSource.query(`SELECT * FROM resource`);
+    const rawResources = await this.dataSource.query<ResourceRow[]>(
+      `SELECT * FROM resource`,
+    );
 
     // filter out all resources with resource_source = 'Annotation'
     const resources = rawResources.filter(
@@ -40,21 +78,25 @@ export class KnowledgeBaseService {
     );
     const startTime = Date.now();
 
-    const documents: any[] = [];
+    const documents: Record<string, unknown>[] = [];
     for (const resource of resources) {
-      const subjectResources = await this.dataSource.query(
+      const subjectResources = await this.dataSource.query<
+        SubjectResourceRow[]
+      >(
         `SELECT * FROM subject_resource WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const uriType = [];
+      const uriType: UriTypeRow[] = [];
 
-      const workflowsRelations = await this.dataSource.query(
+      const workflowsRelations = await this.dataSource.query<
+        WorkflowRelationRow[]
+      >(
         `SELECT * FROM resource_workflow WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const workflows: any[] = [];
+      const workflows: (WorkflowRow & { status: string })[] = [];
       for (const wr of workflowsRelations) {
-        const workflow: any[] = await this.dataSource.query(
+        const workflow = await this.dataSource.query<WorkflowRow[]>(
           `SELECT * FROM workflow WHERE "UUID_Workflow" = '${wr.uuid_adoption_state}' LIMIT 1`,
         );
 
@@ -64,13 +106,13 @@ export class KnowledgeBaseService {
         workflows.push({ ...workflow[0], status: wr.status });
       }
 
-      const rightsResource = await this.dataSource.query(
+      const rightsResource = await this.dataSource.query<RightsResourceRow[]>(
         `SELECT * FROM resource_right WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const rights: any[] = [];
+      const rights: (RightRow & { relation: string })[] = [];
       for (const rr of rightsResource) {
-        const right: any[] = await this.dataSource.query(
+        const right = await this.dataSource.query<RightRow[]>(
           `SELECT * FROM "right" WHERE "lod_pid" = '${rr.lod_pid}' LIMIT 1`,
         );
         if (right.length < 1) {
@@ -79,13 +121,15 @@ export class KnowledgeBaseService {
         rights.push({ ...right[0], relation: rr.relation });
       }
 
-      const gorcElementsResource = await this.dataSource.query(
+      const gorcElementsResource = await this.dataSource.query<
+        GorcElementResourceRow[]
+      >(
         `SELECT * FROM resource_gorc_element WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const gorcElements: any[] = [];
+      const gorcElements: GorcElementRow[] = [];
       for (const ge of gorcElementsResource) {
-        const gorcElement: any[] = await this.dataSource.query(
+        const gorcElement = await this.dataSource.query<GorcElementRow[]>(
           `SELECT * FROM gorc_element WHERE uuid_element = '${ge.uuid_element}' LIMIT 1`,
         );
         if (gorcElement.length < 1) {
@@ -94,13 +138,15 @@ export class KnowledgeBaseService {
         gorcElements.push(gorcElement[0]);
       }
 
-      const gorcAttributesResource = await this.dataSource.query(
+      const gorcAttributesResource = await this.dataSource.query<
+        GorcAttributeResourceRow[]
+      >(
         `SELECT * FROM resource_gorc_attribute WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const gorcAttributes: any[] = [];
+      const gorcAttributes: GorcAttributeRow[] = [];
       for (const ga of gorcAttributesResource) {
-        const gorcAttribute: any[] = await this.dataSource.query(
+        const gorcAttribute = await this.dataSource.query<GorcAttributeRow[]>(
           `SELECT * FROM gorc_atribute WHERE uuid_Attribute = '${ga.uuid_attribute}' LIMIT 1`,
         );
         if (gorcAttribute.length < 1) {
@@ -109,12 +155,14 @@ export class KnowledgeBaseService {
         gorcAttributes.push(gorcAttribute[0]);
       }
 
-      const disciplinesResource = await this.dataSource.query(
+      const disciplinesResource = await this.dataSource.query<
+        DisciplineResourceRow[]
+      >(
         `SELECT * FROM resource_discipline WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
-      const disciplines: any[] = [];
+      const disciplines: DisciplineRow[] = [];
       for (const dr of disciplinesResource) {
-        const discipline: any[] = await this.dataSource.query(
+        const discipline = await this.dataSource.query<DisciplineRow[]>(
           `SELECT * FROM discipline WHERE internal_identifier = '${dr.internal_identifier}' LIMIT 1`,
         );
         if (discipline.length < 1) {
@@ -123,14 +171,16 @@ export class KnowledgeBaseService {
         disciplines.push(discipline[0]);
       }
 
-      const individualResources = await this.dataSource.query(
+      const individualResources = await this.dataSource.query<
+        IndividualResourceRow[]
+      >(
         `SELECT * FROM individual_resource WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const resourceInstitutions: any[] = [];
-      const individuals: any[] = []; // help...
+      const resourceInstitutions: Record<string, unknown>[] = [];
+      const individuals: Record<string, unknown>[] = [];
       for (const ir of individualResources) {
-        const individual: any[] = await this.dataSource.query(
+        const individual = await this.dataSource.query<IndividualRow[]>(
           `SELECT * FROM individual WHERE uuid_individual = '${ir.uuid_individual}' LIMIT 1`,
         );
         if (individual.length < 1) {
@@ -139,20 +189,20 @@ export class KnowledgeBaseService {
 
         const [memberOfInstitutions, institutionsIndividual] =
           await Promise.all([
-            await this.dataSource.query(
+            this.dataSource.query<InstitutionMemberRow[]>(
               `SELECT * FROM individual_member WHERE uuid_individual = '${individual[0].uuid_individual}'`,
             ),
-            await this.dataSource.query(
+            this.dataSource.query<InstitutionMemberRow[]>(
               `SELECT * FROM individual_institution WHERE uuid_rda_member = '${individual[0].uuid_individual}'`,
             ),
           ]);
 
-        const mapToInstitutions = (institution: any) => ({
+        const mapToInstitutions = (
+          institution: InstitutionMemberRow,
+        ): { uuid_institution: string; uuid_individual: string } => ({
           uuid_institution: institution.uuid_institution,
           uuid_individual:
-            'uuid_individual' in institution
-              ? institution.uuid_individual
-              : institution.member,
+            institution.uuid_individual ?? institution.member ?? '',
         });
 
         const individualInstitutions = [
@@ -160,9 +210,9 @@ export class KnowledgeBaseService {
           ...institutionsIndividual,
         ].map(mapToInstitutions);
 
-        const institutions: any[] = [];
+        const institutions: Record<string, unknown>[] = [];
         for (const ii of individualInstitutions) {
-          const institution = await this.dataSource.query(
+          const institution = await this.dataSource.query<InstitutionRow[]>(
             `SELECT * FROM institution WHERE uuid_institution = '${ii.uuid_institution}' LIMIT 1`,
           );
 
@@ -170,29 +220,33 @@ export class KnowledgeBaseService {
             continue;
           }
 
-          const institutionOrgType = await this.dataSource.query(
+          const institutionOrgType = await this.dataSource.query<
+            InstitutionOrgTypeRow[]
+          >(
             `SELECT * FROM institution_organisation_type WHERE uuid_institution = '${ii.uuid_institution}' LIMIT 1`,
           );
 
-          let orgType = null;
+          let orgType: OrgTypeRow[] | null = null;
           if (institutionOrgType.length > 0) {
-            orgType = await this.dataSource.query(
+            orgType = await this.dataSource.query<OrgTypeRow[]>(
               `SELECT * FROM org_type WHERE organisation_type_id = '${institutionOrgType[0].uuid_org_type}' LIMIT 1`,
             );
           }
 
-          const institutionRole = await this.dataSource.query(
+          const institutionRole = await this.dataSource.query<
+            InstitutionRoleRelationRow[]
+          >(
             `SELECT * FROM institution_institution_role WHERE "UUID_Institution" = '${ii.uuid_institution}' LIMIT 1`,
           );
 
-          let role = null;
+          let role: InstitutionRoleRow[] | null = null;
           if (institutionRole.length > 0) {
-            role = await this.dataSource.query(
+            role = await this.dataSource.query<InstitutionRoleRow[]>(
               `SELECT * FROM institution_role WHERE "InstitutionRoleID" = '${institutionRole[0].InstitutionRoleID}' LIMIT 1`,
             );
           }
 
-          const country = await this.dataSource.query(
+          const country = await this.dataSource.query<InstitutionCountryRow[]>(
             `SELECT * FROM institution_country WHERE uuid_institution = '${ii.uuid_institution}' LIMIT 1`,
           );
 
@@ -207,28 +261,28 @@ export class KnowledgeBaseService {
         resourceInstitutions.push(...institutions);
 
         const [individualGroups, individualGroupAll] = await Promise.all([
-          await this.dataSource.query(
+          this.dataSource.query<IndividualGroupRow[]>(
             `SELECT * FROM individual_group WHERE uuid_individual = '${individual[0].uuid_individual}'`,
           ),
-          await this.dataSource.query(
+          this.dataSource.query<IndividualGroupRow[]>(
             `SELECT * FROM individual_group_all WHERE uuid_individual = '${individual[0].uuid_individual}'`,
           ),
         ]);
 
-        const mapToGroups = (group: any) => ({
+        const mapToGroups = (
+          group: IndividualGroupRow,
+        ): { uuid_group: string; uuid_individual: string } => ({
           uuid_group: group.uuid_group,
           uuid_individual: group.uuid_individual,
-          // member_type:
-          //   'member_type' in group ? group.member_type : group.relation,
         });
 
         const groups = [...individualGroups, ...individualGroupAll].map(
           mapToGroups,
         );
 
-        const memberOfGroups: any[] = [];
+        const memberOfGroups: (InterestGroupRow | WorkingGroupRow)[] = [];
         for (const group of groups) {
-          const interestGroup = await this.dataSource.query(
+          const interestGroup = await this.dataSource.query<InterestGroupRow[]>(
             `SELECT * FROM interest_group WHERE "uuid_interestGroup" = '${group.uuid_group}' LIMIT 1`,
           );
 
@@ -237,7 +291,7 @@ export class KnowledgeBaseService {
             continue;
           }
 
-          const workingGroup = await this.dataSource.query(
+          const workingGroup = await this.dataSource.query<WorkingGroupRow[]>(
             `SELECT * FROM working_group WHERE uuid_working_group = '${group.uuid_group}' LIMIT 1`,
           );
 
@@ -256,13 +310,13 @@ export class KnowledgeBaseService {
         });
       }
 
-      const groupsResource = await this.dataSource.query(
+      const groupsResource = await this.dataSource.query<GroupResourceRow[]>(
         `SELECT * FROM group_resource WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
-      const workingGroups: any[] = [];
-      const interestGroups: any[] = [];
+      const workingGroups: (WorkingGroupRow & { relation: string })[] = [];
+      const interestGroups: (InterestGroupRow & { relation: string })[] = [];
       for (const gr of groupsResource) {
-        const workingGroup = await this.dataSource.query(
+        const workingGroup = await this.dataSource.query<WorkingGroupRow[]>(
           `SELECT * FROM working_group WHERE uuid_working_group = '${gr.uuid_group}' LIMIT 1`,
         );
         if (workingGroup.length > 0) {
@@ -270,7 +324,7 @@ export class KnowledgeBaseService {
           continue;
         }
 
-        const interestGroup = await this.dataSource.query(
+        const interestGroup = await this.dataSource.query<InterestGroupRow[]>(
           `SELECT * FROM interest_group WHERE "uuid_interestGroup" = '${gr.uuid_group}' LIMIT 1`,
         );
 
@@ -280,13 +334,15 @@ export class KnowledgeBaseService {
         interestGroups.push({ ...interestGroup[0], relation: gr.relation });
       }
 
-      const pathwaysResource = await this.dataSource.query(
+      const pathwaysResource = await this.dataSource.query<
+        PathwayResourceRow[]
+      >(
         `SELECT * FROM resource_pathway WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const pathways: any[] = [];
+      const pathways: PathwayRow[] = [];
       for (const pr of pathwaysResource) {
-        const pathway = await this.dataSource.query(
+        const pathway = await this.dataSource.query<PathwayRow[]>(
           `SELECT * FROM pathway WHERE uuid_pathway = '${pr.uuid_pathway}' LIMIT 1`,
         );
         if (pathway.length < 1) {
@@ -295,13 +351,15 @@ export class KnowledgeBaseService {
         pathways.push(pathway[0]);
       }
 
-      const resourceRelations = await this.dataSource.query(
+      const resourceRelations = await this.dataSource.query<
+        ResourceRelationRow[]
+      >(
         `SELECT * FROM resource_relation WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const relations: any[] = [];
+      const relations: (RelationRow & { relation: string })[] = [];
       for (const rr of resourceRelations) {
-        const relation = await this.dataSource.query(
+        const relation = await this.dataSource.query<RelationRow[]>(
           `SELECT * FROM relation WHERE uuid_relation = '${rr.uuid_relation}' LIMIT 1`,
         );
         if (relation.length < 1) {
@@ -310,13 +368,15 @@ export class KnowledgeBaseService {
         relations.push({ ...relation[0], relation: rr.relation });
       }
 
-      const resourceKeywords = await this.dataSource.query(
+      const resourceKeywords = await this.dataSource.query<
+        ResourceKeywordRow[]
+      >(
         `SELECT * FROM resource_keyword WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const keywords: any[] = [];
+      const keywords: KeywordRow[] = [];
       for (const rk of resourceKeywords) {
-        const keyword = await this.dataSource.query(
+        const keyword = await this.dataSource.query<KeywordRow[]>(
           `SELECT * FROM keyword WHERE uuid_keyword = '${rk.uuid_keyword}' LIMIT 1`,
         );
         if (keyword.length < 1) {
@@ -326,7 +386,9 @@ export class KnowledgeBaseService {
       }
 
       // Fetch custom vocabularies from resource_vocabulary table
-      const resourceVocabularies = await this.dataSource.query(
+      const resourceVocabularies = await this.dataSource.query<
+        ResourceVocabularyRow[]
+      >(
         `SELECT rv.*, v.subject_scheme, v.value_scheme
          FROM resource_vocabulary rv
          LEFT JOIN vocabulary v ON rv.namespace = v.namespace AND rv.value_uri = v.value_uri
@@ -334,7 +396,7 @@ export class KnowledgeBaseService {
         [resource.uuid_rda],
       );
 
-      const customVocabularies: any[] = resourceVocabularies.map((rv: any) => ({
+      const customVocabularies = resourceVocabularies.map((rv) => ({
         namespace: rv.namespace,
         label: rv.label,
         value: rv.value_uri,
@@ -511,7 +573,8 @@ export class KnowledgeBaseService {
 
       return document._source;
     } catch (error) {
-      if (error.meta?.statusCode === 404) {
+      const esError = error as { meta?: { statusCode?: number } };
+      if (esError.meta?.statusCode === 404) {
         throw new NotFoundException('Document not found');
       }
       this.logger.error(error);
@@ -571,7 +634,7 @@ export class KnowledgeBaseService {
       annotation_target: annotation.target,
     };
 
-    let document: any = null;
+    let document: Record<string, unknown> | null = null;
 
     // Create transaction to insert into resource and
     const queryRunner = this.dataSource.createQueryRunner();
@@ -615,7 +678,7 @@ export class KnowledgeBaseService {
         ],
       );
 
-      const interestGroups: any[] = [];
+      const interestGroups: (InterestGroupRow & { relation: string })[] = [];
       for (const annotationIG of annotation.interest_groups || []) {
         const groupResource = {
           relation: 'igLink',
@@ -626,10 +689,10 @@ export class KnowledgeBaseService {
           uuid_resource: resource.uuid_rda,
         };
 
-        const interestGroup = await queryRunner.query(
+        const interestGroup = (await queryRunner.query(
           `SELECT * FROM interest_group WHERE "uuid_interestGroup" = $1 LIMIT 1`,
           [groupResource.uuid_group],
-        );
+        )) as InterestGroupRow[];
 
         if (interestGroup.length < 1) {
           throw new NotFoundException('Interest Group not found!');
@@ -653,7 +716,7 @@ export class KnowledgeBaseService {
         });
       }
 
-      const workingGroups: any[] = [];
+      const workingGroups: (WorkingGroupRow & { relation: string })[] = [];
       for (const annotationWG of annotation.working_groups || []) {
         const groupResource = {
           relation: 'wgLink',
@@ -664,10 +727,10 @@ export class KnowledgeBaseService {
           uuid_resource: resource.uuid_rda,
         };
 
-        const workingGroup = await queryRunner.query(
+        const workingGroup = (await queryRunner.query(
           `SELECT * FROM working_group WHERE uuid_working_group = $1 LIMIT 1`,
           [groupResource.uuid_group],
-        );
+        )) as WorkingGroupRow[];
 
         if (workingGroup.length < 1) {
           throw new NotFoundException('Working Group not found!');
@@ -691,7 +754,7 @@ export class KnowledgeBaseService {
         });
       }
 
-      const pathways: any[] = [];
+      const pathways: (PathwayRow & { relation: string })[] = [];
       for (const annotationPathway of annotation.pathways || []) {
         const ResourcePathway = {
           pathway: annotationPathway.label,
@@ -702,10 +765,10 @@ export class KnowledgeBaseService {
           uuid_resource: resource.uuid_rda,
         };
 
-        const pathway = await queryRunner.query(
+        const pathway = (await queryRunner.query(
           `SELECT * FROM pathway WHERE uuid_pathway = $1 LIMIT 1`,
           [ResourcePathway.uuid_pathway],
-        );
+        )) as PathwayRow[];
 
         if (pathway.length < 1) {
           throw new NotFoundException('Pathway not found!');
@@ -729,7 +792,7 @@ export class KnowledgeBaseService {
         });
       }
 
-      const disciplines: any[] = [];
+      const disciplines: DisciplineRow[] = [];
       for (const annotationDiscipline of annotation.disciplines || []) {
         const resourceDiscipline = {
           disciplines: annotationDiscipline.label,
@@ -738,10 +801,10 @@ export class KnowledgeBaseService {
           uuid_resource: resource.uuid_rda,
         };
 
-        const discipline = await queryRunner.query(
+        const discipline = (await queryRunner.query(
           `SELECT * FROM discipline WHERE internal_identifier = $1 LIMIT 1`,
           [resourceDiscipline.uuid_disciplines],
-        );
+        )) as DisciplineRow[];
 
         if (discipline.length < 1) {
           throw new NotFoundException('Discipline not found!');
@@ -762,7 +825,7 @@ export class KnowledgeBaseService {
         });
       }
 
-      const gorcElements: any[] = [];
+      const gorcElements: GorcElementRow[] = [];
       for (const annotationGORCElement of annotation.gorc_elements || []) {
         const resourceGORCElement = {
           element: annotationGORCElement.label,
@@ -771,10 +834,10 @@ export class KnowledgeBaseService {
           uuid_resource: resource.uuid_rda,
         };
 
-        const gorcElement = await queryRunner.query(
+        const gorcElement = (await queryRunner.query(
           `SELECT * FROM gorc_element WHERE uuid_element = $1 LIMIT 1`,
           [resourceGORCElement.uuid_element],
-        );
+        )) as GorcElementRow[];
 
         if (gorcElement.length < 1) {
           throw new NotFoundException('GORC Element not found!');
@@ -795,7 +858,7 @@ export class KnowledgeBaseService {
         });
       }
 
-      const gorcAttributes: any[] = [];
+      const gorcAttributes: GorcAttributeRow[] = [];
       for (const annotationGORCAttribute of annotation.gorc_attributes || []) {
         const resourceGORCAttribute = {
           attribute: annotationGORCAttribute.label,
@@ -804,10 +867,10 @@ export class KnowledgeBaseService {
           uuid_resource: resource.uuid_rda,
         };
 
-        const gorcAttribute = await queryRunner.query(
+        const gorcAttribute = (await queryRunner.query(
           `SELECT * FROM gorc_atribute WHERE uuid_Attribute = $1 LIMIT 1`,
           [resourceGORCAttribute.uuid_Attribute],
-        );
+        )) as GorcAttributeRow[];
 
         if (gorcAttribute.length < 1) {
           throw new NotFoundException('GORC Attribute not found!');
@@ -828,22 +891,22 @@ export class KnowledgeBaseService {
         });
       }
 
-      const uriType = await queryRunner.query(
+      const uriType = (await queryRunner.query(
         `SELECT * FROM uri_type WHERE uuid_uri_type = $1`,
         [annotation.resource_type.value],
-      );
+      )) as UriTypeRow[];
 
-      const keywords: any[] = [];
+      const keywords: KeywordRow[] = [];
       for (const annotationKeyword of annotation.keywords || []) {
         const resourceKeyword = {
           uuid_resource: resource.uuid_rda,
           uuid_keyword: annotationKeyword.value,
         };
 
-        const keyword = await queryRunner.query(
+        const keyword = (await queryRunner.query(
           `SELECT * FROM keyword WHERE uuid_keyword = $1 LIMIT 1`,
           [resourceKeyword.uuid_keyword],
-        );
+        )) as KeywordRow[];
 
         if (keyword.length < 1) {
           throw new NotFoundException('Keyword not found!');
@@ -860,16 +923,22 @@ export class KnowledgeBaseService {
       }
 
       // Handle open vocabularies (generic - any namespace from vocabulary table)
-      const customVocabularies: any[] = [];
+      const customVocabularies: {
+        namespace: string;
+        label: string;
+        value: string;
+        subject_scheme: string;
+        value_scheme: string;
+      }[] = [];
       if (annotation.open_vocabularies) {
         for (const [namespace, items] of Object.entries(
           annotation.open_vocabularies,
         )) {
           // Validate namespace exists in vocabulary table
-          const namespaceExists = await queryRunner.query(
+          const namespaceExists = (await queryRunner.query(
             `SELECT 1 FROM vocabulary WHERE namespace = $1 LIMIT 1`,
             [namespace],
-          );
+          )) as { '?column?': number }[];
 
           if (namespaceExists.length < 1) {
             throw new BadRequestException(
@@ -880,10 +949,10 @@ export class KnowledgeBaseService {
           // Process each item in this namespace
           for (const item of items || []) {
             // Validate the specific vocabulary item exists
-            const vocabulary = await queryRunner.query(
+            const vocabulary = (await queryRunner.query(
               `SELECT * FROM vocabulary WHERE namespace = $1 AND value_uri = $2 LIMIT 1`,
               [namespace, item.value],
-            );
+            )) as { subject_scheme: string; value_scheme: string }[];
 
             if (vocabulary.length < 1) {
               throw new NotFoundException(
@@ -937,7 +1006,9 @@ export class KnowledgeBaseService {
 
       await queryRunner.commitTransaction();
     } catch (error) {
-      this.logger.error('Error creating annotation');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error creating annotation: ${errorMessage}`);
       await queryRunner.rollbackTransaction();
       throw new InternalServerErrorException('Error creating annotation');
     } finally {
@@ -949,7 +1020,7 @@ export class KnowledgeBaseService {
 
   async deleteAnnotation(uuid_rda: string) {
     // First verify the resource exists and is an annotation
-    const resource = await this.dataSource.query(
+    const resource = await this.dataSource.query<ResourceRow[]>(
       `SELECT * FROM resource WHERE uuid_rda = $1 AND resource_source = 'Annotation' LIMIT 1`,
       [uuid_rda],
     );
@@ -975,7 +1046,8 @@ export class KnowledgeBaseService {
             refresh: true,
           });
         } catch (error) {
-          if (error.meta?.statusCode !== 404) {
+          const esError = error as { meta?: { statusCode?: number } };
+          if (esError.meta?.statusCode !== 404) {
             throw error;
           }
           this.logger.warn(`Document ${uuid_rda} not found in Elasticsearch`);
@@ -1045,7 +1117,7 @@ export class KnowledgeBaseService {
       throw new Error('Alias is not ready');
     }
 
-    const annotations = await this.dataSource.query(
+    const annotations = await this.dataSource.query<ResourceRow[]>(
       "SELECT * FROM resource WHERE resource_source = 'Annotation'",
     );
 
@@ -1054,18 +1126,18 @@ export class KnowledgeBaseService {
     );
     const startTime = Date.now();
 
-    const documents: any[] = [];
+    const documents: Record<string, unknown>[] = [];
 
     for (const resource of annotations) {
-      const groupsResource = await this.dataSource.query(
+      const groupsResource = await this.dataSource.query<GroupResourceRow[]>(
         `SELECT * FROM group_resource WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const interestGroups: any[] = [];
-      const workingGroups: any[] = [];
+      const interestGroups: (InterestGroupRow & { relation: string })[] = [];
+      const workingGroups: (WorkingGroupRow & { relation: string })[] = [];
 
       for (const gr of groupsResource) {
-        const interestGroup = await this.dataSource.query(
+        const interestGroup = await this.dataSource.query<InterestGroupRow[]>(
           `SELECT * FROM interest_group WHERE "uuid_interestGroup" = '${gr.uuid_group}' LIMIT 1`,
         );
 
@@ -1074,7 +1146,7 @@ export class KnowledgeBaseService {
           continue;
         }
 
-        const workingGroup = await this.dataSource.query(
+        const workingGroup = await this.dataSource.query<WorkingGroupRow[]>(
           `SELECT * FROM working_group WHERE uuid_working_group = '${gr.uuid_group}' LIMIT 1`,
         );
 
@@ -1083,13 +1155,15 @@ export class KnowledgeBaseService {
         }
       }
 
-      const pathwaysResource = await this.dataSource.query(
+      const pathwaysResource = await this.dataSource.query<
+        PathwayResourceRow[]
+      >(
         `SELECT * FROM resource_pathway WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const pathways: any[] = [];
+      const pathways: PathwayRow[] = [];
       for (const pr of pathwaysResource) {
-        const pathway = await this.dataSource.query(
+        const pathway = await this.dataSource.query<PathwayRow[]>(
           `SELECT * FROM pathway WHERE uuid_pathway = '${pr.uuid_pathway}' LIMIT 1`,
         );
         if (pathway.length > 0) {
@@ -1097,13 +1171,15 @@ export class KnowledgeBaseService {
         }
       }
 
-      const disciplinesResource = await this.dataSource.query(
+      const disciplinesResource = await this.dataSource.query<
+        DisciplineResourceRow[]
+      >(
         `SELECT * FROM resource_discipline WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const disciplines: any[] = [];
+      const disciplines: DisciplineRow[] = [];
       for (const dr of disciplinesResource) {
-        const discipline: any[] = await this.dataSource.query(
+        const discipline = await this.dataSource.query<DisciplineRow[]>(
           `SELECT * FROM discipline WHERE internal_identifier = '${dr.uuid_disciplines}' LIMIT 1`,
         );
         if (discipline.length > 0) {
@@ -1111,13 +1187,15 @@ export class KnowledgeBaseService {
         }
       }
 
-      const gorcElementsResource = await this.dataSource.query(
+      const gorcElementsResource = await this.dataSource.query<
+        GorcElementResourceRow[]
+      >(
         `SELECT * FROM resource_gorc_element WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const gorcElements: any[] = [];
+      const gorcElements: GorcElementRow[] = [];
       for (const ge of gorcElementsResource) {
-        const gorcElement: any[] = await this.dataSource.query(
+        const gorcElement = await this.dataSource.query<GorcElementRow[]>(
           `SELECT * FROM gorc_element WHERE uuid_element = '${ge.uuid_element}' LIMIT 1`,
         );
         if (gorcElement.length > 0) {
@@ -1125,13 +1203,15 @@ export class KnowledgeBaseService {
         }
       }
 
-      const gorcAttributesResource = await this.dataSource.query(
+      const gorcAttributesResource = await this.dataSource.query<
+        GorcAttributeResourceRow[]
+      >(
         `SELECT * FROM resource_gorc_attribute WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const gorcAttributes: any[] = [];
+      const gorcAttributes: GorcAttributeRow[] = [];
       for (const ga of gorcAttributesResource) {
-        const gorcAttribute: any[] = await this.dataSource.query(
+        const gorcAttribute = await this.dataSource.query<GorcAttributeRow[]>(
           `SELECT * FROM gorc_atribute WHERE uuid_Attribute = '${ga.uuid_Attribute}' LIMIT 1`,
         );
         if (gorcAttribute.length > 0) {
@@ -1139,20 +1219,22 @@ export class KnowledgeBaseService {
         }
       }
 
-      let uriType = [];
+      let uriType: UriTypeRow[] = [];
       if (resource.uuid_uri_type) {
-        uriType = await this.dataSource.query(
+        uriType = await this.dataSource.query<UriTypeRow[]>(
           `SELECT * FROM uri_type WHERE uuid_uri_type = '${resource.uuid_uri_type}'`,
         );
       }
 
-      const resourceKeywords = await this.dataSource.query(
+      const resourceKeywords = await this.dataSource.query<
+        ResourceKeywordRow[]
+      >(
         `SELECT * FROM resource_keyword WHERE uuid_resource = '${resource.uuid_rda}'`,
       );
 
-      const keywords: any[] = [];
+      const keywords: KeywordRow[] = [];
       for (const rk of resourceKeywords) {
-        const keyword = await this.dataSource.query(
+        const keyword = await this.dataSource.query<KeywordRow[]>(
           `SELECT * FROM keyword WHERE uuid_keyword = '${rk.uuid_keyword}' LIMIT 1`,
         );
         if (keyword.length > 0) {
@@ -1161,7 +1243,9 @@ export class KnowledgeBaseService {
       }
 
       // Fetch custom vocabularies from resource_vocabulary table
-      const resourceVocabularies = await this.dataSource.query(
+      const resourceVocabularies = await this.dataSource.query<
+        ResourceVocabularyRow[]
+      >(
         `SELECT rv.*, v.subject_scheme, v.value_scheme
          FROM resource_vocabulary rv
          LEFT JOIN vocabulary v ON rv.namespace = v.namespace AND rv.value_uri = v.value_uri
@@ -1169,7 +1253,7 @@ export class KnowledgeBaseService {
         [resource.uuid_rda],
       );
 
-      const customVocabularies: any[] = resourceVocabularies.map((rv: any) => ({
+      const customVocabularies = resourceVocabularies.map((rv) => ({
         namespace: rv.namespace,
         label: rv.label,
         value: rv.value_uri,
@@ -1230,9 +1314,9 @@ export class KnowledgeBaseService {
     };
   }
 
-  async createMetric(metricDto: CreateMetricDto) {
+  async createMetric(metricDto: CreateMetricDto): Promise<MetricRow> {
     try {
-      const result = await this.dataSource.query(
+      const result = await this.dataSource.query<MetricRow[]>(
         `INSERT INTO metric (type, version, browser, browser_version, os, arch, locale, timestamp)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING id, type, version, browser, browser_version, os, arch, locale, timestamp, created_at`,
@@ -1252,7 +1336,6 @@ export class KnowledgeBaseService {
         `Metric created: ${metricDto.type} - ${metricDto.browser} ${metricDto.browserVersion} on ${metricDto.os}`,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
       return result[0];
     } catch (error) {
       const errorMessage =
