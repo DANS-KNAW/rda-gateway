@@ -8,6 +8,11 @@
  * variables in the CI/CD pipeline and the developer locally instead of here.
  */
 
+// Mock nanoid since it's an ESM-only module that doesn't work with Jest's default transformer
+jest.mock('nanoid', () => ({
+  customAlphabet: jest.fn(() => () => 'MOCKID123456'),
+}));
+
 // Set base environment variables that are always needed
 process.env.API_PORT = 3000;
 process.env.NODE_ENV = 'development';
