@@ -35,6 +35,7 @@ describe('VocabulariesController (e2e)', () => {
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
           value_scheme: 'Test Value Scheme',
+          namespace: 'test-namespace',
           additional_metadata: { key: 'value' },
         })
         .expect(201);
@@ -45,6 +46,7 @@ describe('VocabulariesController (e2e)', () => {
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
         value_scheme: 'Test Value Scheme',
+        namespace: 'test-namespace',
         additional_metadata: { key: 'value' },
         deleted_at: null,
       });
@@ -82,6 +84,7 @@ describe('VocabulariesController (e2e)', () => {
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
           value_scheme: 'Test Value Scheme',
+          namespace: 'test-namespace',
           additional_metadata: { key: 'value' },
         })
         .expect(409);
@@ -104,6 +107,7 @@ describe('VocabulariesController (e2e)', () => {
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
           value_scheme: 'Test Value Scheme',
+          namespace: 'test-namespace',
           additional_metadata: { key: 'value' },
         })
         .expect(201);
@@ -123,6 +127,7 @@ describe('VocabulariesController (e2e)', () => {
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
         value_scheme: 'Test Value Scheme',
+        namespace: 'test-namespace',
         additional_metadata: { key: 'value' },
         deleted_at: null,
       });
@@ -154,6 +159,7 @@ describe('VocabulariesController (e2e)', () => {
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
         value_scheme: 'Test Value Scheme',
+        namespace: 'test-namespace',
         additional_metadata: { key: 'value' },
         deleted_at: null,
       });
@@ -204,6 +210,7 @@ describe('VocabulariesController (e2e)', () => {
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
           value_scheme: 'Test Value Scheme',
+          namespace: 'test-namespace',
           additional_metadata: { key: 'newValue' },
         })
         .expect(200);
@@ -217,6 +224,7 @@ describe('VocabulariesController (e2e)', () => {
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
         value_scheme: 'Test Value Scheme',
+        namespace: 'test-namespace',
         additional_metadata: { key: 'newValue' },
         deleted_at: null,
       });
@@ -252,6 +260,7 @@ describe('VocabulariesController (e2e)', () => {
           scheme_uri: 'http://example.com/scheme',
           value_uri: 'http://example.com/value',
           value_scheme: 'Test Value Scheme',
+          namespace: 'test-namespace',
           additional_metadata: { key: 'value' },
         })
         .expect(404);
@@ -298,6 +307,7 @@ describe('VocabulariesController (e2e)', () => {
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
         value_scheme: 'Test Value Scheme',
+        namespace: 'test-namespace',
         additional_metadata: { key: 'newValue' },
       });
       expect(body[0].deleted_at).not.toBeNull();
@@ -394,6 +404,7 @@ describe('VocabulariesController (e2e)', () => {
         scheme_uri: 'http://example.com/scheme',
         value_uri: 'http://example.com/value',
         value_scheme: 'Test Value Scheme',
+        namespace: 'test-namespace',
         additional_metadata: { key: 'newValue' },
       });
       expect(body[0].deleted_at).toBeNull();

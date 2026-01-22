@@ -39,6 +39,7 @@ export function ExceptionHandler(
       if (result && typeof result.then === 'function') {
         return result.catch((error: any) => {
           ErrorClassifier(error);
+          throw error;
         });
       }
 
