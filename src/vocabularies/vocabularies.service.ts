@@ -265,7 +265,7 @@ export class VocabulariesService {
       throw new NotFoundException('No vocabularies found');
     }
 
-    // Transform to Vocabulary format
+    // Transform to Vocabulary format (dedicated tables don't have timestamp fields)
     return results.map((row) => ({
       subject_scheme: namespace,
       scheme_uri: namespace,
@@ -276,6 +276,9 @@ export class VocabulariesService {
         description: row.description || undefined,
         url: row.url || undefined,
       },
+      deleted_at: null,
+      updated_at: new Date(),
+      created_at: new Date(),
     })) as Vocabulary[];
   }
 

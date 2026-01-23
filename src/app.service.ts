@@ -28,7 +28,7 @@ interface GitHubRelease {
 }
 
 // Interface for annotator metadata query result
-interface AnnotatorMetadataRow {
+export interface AnnotatorMetadataRow {
   version: string;
   chrome_zip_url: string;
   release_date: string;

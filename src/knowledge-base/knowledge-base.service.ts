@@ -995,7 +995,7 @@ export class KnowledgeBaseService {
 
       const result = await this.elasticsearchService.index({
         index: this.config.ELASTIC_ALIAS_NAME,
-        id: document.uuid_rda,
+        id: document.uuid_rda as string,
         document: document,
         refresh: true,
       });
