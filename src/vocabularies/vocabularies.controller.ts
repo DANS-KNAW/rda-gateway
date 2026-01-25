@@ -14,6 +14,7 @@ import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 import { SelectVocabularyDto } from './dto/select-vocabulary.dto';
 import { IdVocabularyDto } from './dto/id-vocabulary.dto';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('Vocabularies')
 @Controller('vocabularies')
@@ -26,6 +27,7 @@ export class VocabulariesController {
     return this.vocabulariesService.create(createVocabularyDto);
   }
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Find vocabulary entries with optional filters' })
   find(@Query() selectVocabularyDto: SelectVocabularyDto) {

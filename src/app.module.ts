@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -10,12 +11,15 @@ import { IngestsModule } from './ingests/ingests.module';
 import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module';
 import databaseConfig from './config/database.config';
 import elasticsearchConfig from './config/elasticsearch.config';
+import iamConfig from './config/iam.config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
+import { ApiKeyGuard } from './common/guards/api-key.guard';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [coreConfig, databaseConfig, elasticsearchConfig],
+      load: [coreConfig, databaseConfig, elasticsearchConfig, iamConfig],
       skipProcessEnv: true,
       validatePredefined: true,
       ignoreEnvFile: false, // Might want to change to true once fully containerized
@@ -29,6 +33,12 @@ import { HttpModule } from '@nestjs/axios';
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ApiKeyGuard,
+    },
+  ],
 })
 export class AppModule {}

@@ -18,12 +18,14 @@ import {
 import { KnowledgeBaseService } from './knowledge-base.service';
 import { CreateAnnotationDto } from './dto/create-annotation.dto';
 import { CreateMetricDto } from './dto/create-metric.dto';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('Knowledge Base')
 @Controller('knowledge-base')
 export class KnowledgeBaseController {
   constructor(private readonly knowledgeBaseService: KnowledgeBaseService) {}
 
+  @Public()
   @HttpCode(200)
   @Post('rda/_search')
   @ApiOperation({ summary: 'Search documents in the knowledge base' })
@@ -31,6 +33,7 @@ export class KnowledgeBaseController {
     return this.knowledgeBaseService.getAllIndexDocuments(req.body as object);
   }
 
+  @Public()
   @Get('rda/_source/:document')
   @ApiOperation({ summary: 'Get a document by ID' })
   @ApiParam({ name: 'document', description: 'Document identifier' })
