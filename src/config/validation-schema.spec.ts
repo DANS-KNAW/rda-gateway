@@ -11,6 +11,7 @@ describe('Validation Schema', () => {
 
       AUTH_STRATEGY: 'keycloak',
       KEYCLOAK_CLIENT_ID: 'rda-auth',
+      API_KEY: 'test-api-key-minimum-32-characters-long',
 
       DATABASE_HOST: 'localhost',
       DATABASE_PORT: 5432,
@@ -90,15 +91,52 @@ describe('Validation Schema', () => {
     });
 
     it('should accept missing KEYCLOAK_CLIENT_ID when AUTH_STRATEGY is none', () => {
-      const { KEYCLOAK_CLIENT_ID, ...envWithoutClientId } = env;
+      const { KEYCLOAK_CLIENT_ID, API_KEY, ...envWithoutOptionals } = env;
       void KEYCLOAK_CLIENT_ID;
+      void API_KEY;
 
       const result = EnvironmentSchema.safeParse({
-        ...envWithoutClientId,
+        ...envWithoutOptionals,
         AUTH_STRATEGY: 'none',
       });
 
       expect(result.error).toBeUndefined();
+    });
+
+    it('should reject missing API_KEY when AUTH_STRATEGY is keycloak', () => {
+      const { API_KEY, ...envWithoutApiKey } = env;
+      void API_KEY;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutApiKey,
+      });
+
+      expect(result.error).toBeDefined();
+      expect(result.error?.issues[0].message).toBe(
+        "API_KEY is required when AUTH_STRATEGY is not 'none'",
+      );
+    });
+
+    it('should accept missing API_KEY when AUTH_STRATEGY is none', () => {
+      const { KEYCLOAK_CLIENT_ID, API_KEY, ...envWithoutOptionals } = env;
+      void KEYCLOAK_CLIENT_ID;
+      void API_KEY;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutOptionals,
+        AUTH_STRATEGY: 'none',
+      });
+
+      expect(result.error).toBeUndefined();
+    });
+
+    it('should reject API_KEY shorter than 32 characters', () => {
+      const result = EnvironmentSchema.safeParse({
+        ...env,
+        API_KEY: 'short-key',
+      });
+
+      expect(result.error).toBeDefined();
     });
   });
 
