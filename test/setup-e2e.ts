@@ -18,6 +18,7 @@ process.env.API_PORT = 3000;
 process.env.NODE_ENV = 'development';
 process.env.AUTH_STRATEGY = 'keycloak';
 process.env.KEYCLOAK_CLIENT_ID = 'rda-auth';
+process.env.API_KEY = 'test-api-key-for-e2e-testing-minimum-32-chars';
 process.env.ANNOTATOR_MIN_VERSION = '1.0.0';
 
 // Set placeholder database variables (will be overridden in tests)

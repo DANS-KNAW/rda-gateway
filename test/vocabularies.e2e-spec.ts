@@ -4,6 +4,7 @@ import { App } from 'supertest/types';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { createTestApp } from './utils/create-test-app';
 import { setupTestDatabase } from './utils/test-database-setup';
+import { withApiKey } from './utils/authenticated-request';
 import { Vocabulary } from 'src/vocabularies/entities/vocabulary.entity';
 
 describe('VocabulariesController (e2e)', () => {
@@ -28,8 +29,9 @@ describe('VocabulariesController (e2e)', () => {
 
   describe('/vocabularies (POST)', () => {
     it('/vocabularies (POST)', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/vocabularies')
+      const response = await withApiKey(
+        request(app.getHttpServer()).post('/vocabularies'),
+      )
         .send({
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -55,8 +57,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies (POST) - validation error', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/vocabularies')
+      const response = await withApiKey(
+        request(app.getHttpServer()).post('/vocabularies'),
+      )
         .send({
           subject_scheme: '', // Invalid: empty string
           scheme_uri: 'not-a-valid-uri', // Invalid URI
@@ -77,8 +80,9 @@ describe('VocabulariesController (e2e)', () => {
 
     it('/vocabularies (POST) - duplicate entry', async () => {
       // The previous test already created this entry.
-      const response = await request(app.getHttpServer())
-        .post('/vocabularies')
+      const response = await withApiKey(
+        request(app.getHttpServer()).post('/vocabularies'),
+      )
         .send({
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -100,8 +104,7 @@ describe('VocabulariesController (e2e)', () => {
 
   describe('/vocabularies (GET)', () => {
     it('/vocabularies (GET)', async () => {
-      await request(app.getHttpServer())
-        .post('/vocabularies')
+      await withApiKey(request(app.getHttpServer()).post('/vocabularies'))
         .send({
           subject_scheme: 'Test Another Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -203,8 +206,9 @@ describe('VocabulariesController (e2e)', () => {
 
   describe('/vocabularies (PATCH)', () => {
     it('/vocabularies (PATCH)', async () => {
-      const response = await request(app.getHttpServer())
-        .patch('/vocabularies')
+      const response = await withApiKey(
+        request(app.getHttpServer()).patch('/vocabularies'),
+      )
         .send({
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -233,8 +237,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies (PATCH) - validation error', async () => {
-      const response = await request(app.getHttpServer())
-        .patch('/vocabularies')
+      const response = await withApiKey(
+        request(app.getHttpServer()).patch('/vocabularies'),
+      )
         .send({
           subject_scheme: '', // Invalid: empty string
           scheme_uri: 'not-a-valid-uri', // Invalid URI
@@ -253,8 +258,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies (PATCH) - nonexistent vocabulary', async () => {
-      const response = await request(app.getHttpServer())
-        .patch('/vocabularies')
+      const response = await withApiKey(
+        request(app.getHttpServer()).patch('/vocabularies'),
+      )
         .send({
           subject_scheme: 'Nonexistent Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -273,8 +279,9 @@ describe('VocabulariesController (e2e)', () => {
 
   describe('/vocabularies/archive (DELETE)', () => {
     it('/vocabularies/archive (DELETE)', async () => {
-      const archiveResponse = await request(app.getHttpServer())
-        .delete('/vocabularies/archive')
+      const archiveResponse = await withApiKey(
+        request(app.getHttpServer()).delete('/vocabularies/archive'),
+      )
         .query({
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -318,8 +325,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies/archive (DELETE) - already archived', async () => {
-      const response = await request(app.getHttpServer())
-        .delete('/vocabularies/archive')
+      const response = await withApiKey(
+        request(app.getHttpServer()).delete('/vocabularies/archive'),
+      )
         .query({
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -334,8 +342,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies/archive (DELETE) - nonexistent vocabulary', async () => {
-      const response = await request(app.getHttpServer())
-        .delete('/vocabularies/archive')
+      const response = await withApiKey(
+        request(app.getHttpServer()).delete('/vocabularies/archive'),
+      )
         .query({
           subject_scheme: 'Nonexistent Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -350,8 +359,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies/archive (DELETE) - validation error', async () => {
-      const response = await request(app.getHttpServer())
-        .delete('/vocabularies/archive')
+      const response = await withApiKey(
+        request(app.getHttpServer()).delete('/vocabularies/archive'),
+      )
         .query({
           subject_scheme: '', // Invalid: empty string
           scheme_uri: 'not-a-valid-uri', // Invalid URI
@@ -370,8 +380,9 @@ describe('VocabulariesController (e2e)', () => {
 
   describe('/vocabularies/restore (PATCH)', () => {
     it('/vocabularies/restore (PATCH)', async () => {
-      const restoreResponse = await request(app.getHttpServer())
-        .patch('/vocabularies/restore')
+      const restoreResponse = await withApiKey(
+        request(app.getHttpServer()).patch('/vocabularies/restore'),
+      )
         .query({
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -415,8 +426,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies/restore (PATCH) - not archived', async () => {
-      const response = await request(app.getHttpServer())
-        .patch('/vocabularies/restore')
+      const response = await withApiKey(
+        request(app.getHttpServer()).patch('/vocabularies/restore'),
+      )
         .query({
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -431,8 +443,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies/restore (PATCH) - nonexistent vocabulary', async () => {
-      const response = await request(app.getHttpServer())
-        .patch('/vocabularies/restore')
+      const response = await withApiKey(
+        request(app.getHttpServer()).patch('/vocabularies/restore'),
+      )
         .query({
           subject_scheme: 'Nonexistent Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -447,8 +460,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies/restore (PATCH) - validation error', async () => {
-      const response = await request(app.getHttpServer())
-        .patch('/vocabularies/restore')
+      const response = await withApiKey(
+        request(app.getHttpServer()).patch('/vocabularies/restore'),
+      )
         .query({
           subject_scheme: '', // Invalid: empty string
           scheme_uri: 'not-a-valid-uri', // Invalid URI
@@ -467,8 +481,9 @@ describe('VocabulariesController (e2e)', () => {
 
   describe('/vocabularies (DELETE)', () => {
     it('/vocabularies (DELETE)', async () => {
-      await request(app.getHttpServer())
-        .delete('/vocabularies/archive')
+      await withApiKey(
+        request(app.getHttpServer()).delete('/vocabularies/archive'),
+      )
         .query({
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -477,8 +492,9 @@ describe('VocabulariesController (e2e)', () => {
         })
         .expect(204);
 
-      const deleteResponse = await request(app.getHttpServer())
-        .delete('/vocabularies')
+      const deleteResponse = await withApiKey(
+        request(app.getHttpServer()).delete('/vocabularies'),
+      )
         .query({
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -509,8 +525,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies (DELETE) - nonexistent vocabulary', async () => {
-      const response = await request(app.getHttpServer())
-        .delete('/vocabularies')
+      const response = await withApiKey(
+        request(app.getHttpServer()).delete('/vocabularies'),
+      )
         .query({
           subject_scheme: 'Test Scheme',
           scheme_uri: 'http://example.com/scheme',
@@ -525,8 +542,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies (DELETE) - validation error', async () => {
-      const response = await request(app.getHttpServer())
-        .delete('/vocabularies')
+      const response = await withApiKey(
+        request(app.getHttpServer()).delete('/vocabularies'),
+      )
         .query({
           subject_scheme: '', // Invalid: empty string
           scheme_uri: 'not-a-valid-uri', // Invalid URI
@@ -543,8 +561,9 @@ describe('VocabulariesController (e2e)', () => {
     });
 
     it('/vocabularies (DELETE) - cannot delete non-archived vocabulary', async () => {
-      const response = await request(app.getHttpServer())
-        .delete('/vocabularies')
+      const response = await withApiKey(
+        request(app.getHttpServer()).delete('/vocabularies'),
+      )
         .query({
           subject_scheme: 'Test Another Scheme',
           scheme_uri: 'http://example.com/scheme',
