@@ -7,16 +7,25 @@ import {
   Delete,
   Query,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiNoContentResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiNoContentResponse,
+  ApiOperation,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import { VocabulariesService } from './vocabularies.service';
 import { CreateVocabularyDto } from './dto/create-vocabulary.dto';
 import { UpdateVocabularyDto } from './dto/update-vocabulary.dto';
 import { SelectVocabularyDto } from './dto/select-vocabulary.dto';
 import { IdVocabularyDto } from './dto/id-vocabulary.dto';
 import { Public } from '../common/decorators/public.decorator';
+import { ApiKeyGuard } from '../common/guards/api-key.guard';
 
 @ApiTags('Vocabularies')
+@ApiSecurity('api-key')
+@UseGuards(ApiKeyGuard)
 @Controller('vocabularies')
 export class VocabulariesController {
   constructor(private readonly vocabulariesService: VocabulariesService) {}

@@ -3,14 +3,24 @@ import {
   Controller,
   Post,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import { IngestsService } from './ingests.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { FilesSanitizePipe } from './pipes/files-sanitize.pipe';
+import { ApiKeyGuard } from '../common/guards/api-key.guard';
 
 @ApiTags('Ingests')
+@ApiSecurity('api-key')
+@UseGuards(ApiKeyGuard)
 @Controller('ingests')
 export class IngestsController {
   constructor(private readonly ingestsService: IngestsService) {}

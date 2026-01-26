@@ -4,11 +4,13 @@ import { KnowledgeBaseController } from './knowledge-base.controller';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { ConfigModule, ConfigType } from '@nestjs/config';
 import elasticsearchConfig from 'src/config/elasticsearch.config';
+import iamConfig from 'src/config/iam.config';
 import { OrcidModule } from 'src/orcid/orcid.module';
 
 @Module({
   imports: [
     ConfigModule.forFeature(elasticsearchConfig),
+    ConfigModule.forFeature(iamConfig),
     ElasticsearchModule.registerAsync({
       imports: [ConfigModule.forFeature(elasticsearchConfig)],
       useFactory: (config: ConfigType<typeof elasticsearchConfig>) => ({

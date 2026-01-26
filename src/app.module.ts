@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -14,7 +13,6 @@ import elasticsearchConfig from './config/elasticsearch.config';
 import iamConfig from './config/iam.config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
-import { ApiKeyGuard } from './common/guards/api-key.guard';
 import { IamModule } from './iam/iam.module';
 
 @Module({
@@ -35,12 +33,6 @@ import { IamModule } from './iam/iam.module';
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: APP_GUARD,
-      useClass: ApiKeyGuard,
-    },
-  ],
+  providers: [AppService],
 })
 export class AppModule {}

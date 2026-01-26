@@ -15,6 +15,7 @@ import {
   ApiCreatedResponse,
   ApiOperation,
   ApiParam,
+  ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
 import { KnowledgeBaseService } from './knowledge-base.service';
@@ -23,6 +24,7 @@ import { CreateMetricDto } from './dto/create-metric.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../iam/guards/jwt-auth.guard';
 import { CurrentUser } from '../iam/decorators/current-user.decorator';
+import { ApiKeyGuard } from '../common/guards/api-key.guard';
 
 @ApiTags('Knowledge Base')
 @Controller('knowledge-base')
@@ -68,13 +70,17 @@ export class KnowledgeBaseController {
     return this.knowledgeBaseService.deleteAnnotation(id, orcid);
   }
 
+  @UseGuards(ApiKeyGuard)
   @Get('index/deposits')
+  @ApiSecurity('api-key')
   @ApiOperation({ summary: 'Trigger indexing of all deposits' })
   indexDeposits() {
     return this.knowledgeBaseService.indexAllDeposits();
   }
 
+  @UseGuards(ApiKeyGuard)
   @Get('index/annotations')
+  @ApiSecurity('api-key')
   @ApiOperation({ summary: 'Trigger indexing of all annotations' })
   indexAnnotations() {
     return this.knowledgeBaseService.indexAllAnnotations();
