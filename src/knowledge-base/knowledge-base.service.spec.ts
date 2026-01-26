@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { KnowledgeBaseService } from './knowledge-base.service';
 import { OrcidService } from 'src/orcid/orcid.service';
 import { DataSource } from 'typeorm';
@@ -78,8 +82,9 @@ describe('KnowledgeBaseService', () => {
   });
 
   describe('createAnnotation', () => {
+    const validOrcid = '0000-0002-1825-0097';
     const validAnnotation: Annotation = {
-      submitter: '0000-0002-1825-0097',
+      submitter: validOrcid,
       title: 'Test Annotation',
       selectedText: 'This is the selected text',
       resource: 'https://example.com/article',
@@ -91,22 +96,45 @@ describe('KnowledgeBaseService', () => {
       },
     };
 
+    describe('ownership validation', () => {
+      it('should throw ForbiddenException when submitter does not match authenticated user', async () => {
+        const differentOrcid = '0000-0001-2345-6789';
+
+        await expect(
+          service.createAnnotation(validAnnotation, differentOrcid),
+        ).rejects.toThrow(ForbiddenException);
+
+        await expect(
+          service.createAnnotation(validAnnotation, differentOrcid),
+        ).rejects.toThrow(
+          /Submitter must match the authenticated user's identity/,
+        );
+      });
+    });
+
     describe('ORCID validation', () => {
       it('should throw BadRequestException for invalid ORCID format', async () => {
         mockOrcidService.isValidOrcid.mockReturnValue(false);
+        const invalidOrcid = 'invalid-orcid';
 
         await expect(
-          service.createAnnotation({
-            ...validAnnotation,
-            submitter: 'invalid-orcid',
-          }),
+          service.createAnnotation(
+            {
+              ...validAnnotation,
+              submitter: invalidOrcid,
+            },
+            invalidOrcid,
+          ),
         ).rejects.toThrow(BadRequestException);
 
         await expect(
-          service.createAnnotation({
-            ...validAnnotation,
-            submitter: 'invalid-orcid',
-          }),
+          service.createAnnotation(
+            {
+              ...validAnnotation,
+              submitter: invalidOrcid,
+            },
+            invalidOrcid,
+          ),
         ).rejects.toThrow(/Invalid ORCID format/);
 
         expect(mockOrcidService.isValidOrcid).toHaveBeenCalledWith(
@@ -120,13 +148,13 @@ describe('KnowledgeBaseService', () => {
         mockOrcidService.isValidOrcid.mockReturnValue(true);
         mockOrcidService.lookupName.mockResolvedValue(null);
 
-        await expect(service.createAnnotation(validAnnotation)).rejects.toThrow(
-          BadRequestException,
-        );
+        await expect(
+          service.createAnnotation(validAnnotation, validOrcid),
+        ).rejects.toThrow(BadRequestException);
 
-        await expect(service.createAnnotation(validAnnotation)).rejects.toThrow(
-          /Could not resolve name for ORCID/,
-        );
+        await expect(
+          service.createAnnotation(validAnnotation, validOrcid),
+        ).rejects.toThrow(/Could not resolve name for ORCID/);
 
         expect(mockOrcidService.isValidOrcid).toHaveBeenCalledWith(
           '0000-0002-1825-0097',
@@ -148,10 +176,13 @@ describe('KnowledgeBaseService', () => {
 
         for (const orcid of invalidOrcids) {
           await expect(
-            service.createAnnotation({
-              ...validAnnotation,
-              submitter: orcid,
-            }),
+            service.createAnnotation(
+              {
+                ...validAnnotation,
+                submitter: orcid,
+              },
+              orcid,
+            ),
           ).rejects.toThrow(BadRequestException);
         }
       });

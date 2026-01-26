@@ -29,6 +29,7 @@ describe('ApiKeyGuard', () => {
       guard = new ApiKeyGuard(reflector, {
         AUTH_STRATEGY: 'none',
         API_KEY: undefined,
+        KEYCLOAK_AUTH_URL: undefined,
       });
     });
 
@@ -45,6 +46,7 @@ describe('ApiKeyGuard', () => {
       guard = new ApiKeyGuard(reflector, {
         AUTH_STRATEGY: 'keycloak',
         API_KEY: validApiKey,
+        KEYCLOAK_AUTH_URL: 'https://keycloak.example.com/realms/test',
       });
     });
 
@@ -88,6 +90,7 @@ describe('ApiKeyGuard', () => {
       guard = new ApiKeyGuard(reflector, {
         AUTH_STRATEGY: 'keycloak',
         API_KEY: validApiKey,
+        KEYCLOAK_AUTH_URL: 'https://keycloak.example.com/realms/test',
       });
       getAllAndOverrideSpy = jest.spyOn(reflector, 'getAllAndOverride');
     });

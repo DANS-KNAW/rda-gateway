@@ -11,6 +11,7 @@ describe('Validation Schema', () => {
 
       AUTH_STRATEGY: 'keycloak',
       KEYCLOAK_CLIENT_ID: 'rda-auth',
+      KEYCLOAK_AUTH_URL: 'https://keycloak.example.com/realms/rda',
       API_KEY: 'test-api-key-minimum-32-characters-long',
 
       DATABASE_HOST: 'localhost',
@@ -91,8 +92,14 @@ describe('Validation Schema', () => {
     });
 
     it('should accept missing KEYCLOAK_CLIENT_ID when AUTH_STRATEGY is none', () => {
-      const { KEYCLOAK_CLIENT_ID, API_KEY, ...envWithoutOptionals } = env;
+      const {
+        KEYCLOAK_CLIENT_ID,
+        KEYCLOAK_AUTH_URL,
+        API_KEY,
+        ...envWithoutOptionals
+      } = env;
       void KEYCLOAK_CLIENT_ID;
+      void KEYCLOAK_AUTH_URL;
       void API_KEY;
 
       const result = EnvironmentSchema.safeParse({
@@ -101,6 +108,20 @@ describe('Validation Schema', () => {
       });
 
       expect(result.error).toBeUndefined();
+    });
+
+    it('should reject missing KEYCLOAK_AUTH_URL when AUTH_STRATEGY is keycloak', () => {
+      const { KEYCLOAK_AUTH_URL, ...envWithoutAuthUrl } = env;
+      void KEYCLOAK_AUTH_URL;
+
+      const result = EnvironmentSchema.safeParse({
+        ...envWithoutAuthUrl,
+      });
+
+      expect(result.error).toBeDefined();
+      expect(result.error?.issues[0].message).toBe(
+        "KEYCLOAK_AUTH_URL is required when AUTH_STRATEGY is 'keycloak'",
+      );
     });
 
     it('should reject missing API_KEY when AUTH_STRATEGY is keycloak', () => {
@@ -118,8 +139,14 @@ describe('Validation Schema', () => {
     });
 
     it('should accept missing API_KEY when AUTH_STRATEGY is none', () => {
-      const { KEYCLOAK_CLIENT_ID, API_KEY, ...envWithoutOptionals } = env;
+      const {
+        KEYCLOAK_CLIENT_ID,
+        KEYCLOAK_AUTH_URL,
+        API_KEY,
+        ...envWithoutOptionals
+      } = env;
       void KEYCLOAK_CLIENT_ID;
+      void KEYCLOAK_AUTH_URL;
       void API_KEY;
 
       const result = EnvironmentSchema.safeParse({
