@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/DANS-KNAW/rda-gateway/compare/v0.1.0...v0.2.0) (2026-01-26)
+
+
+### Features
+
+* **auth:** add ApiKeyGuard for API key authentication ([0299198](https://github.com/DANS-KNAW/rda-gateway/commit/029919814f6d498ebeb086c6f80bce0eaa6189b4))
+* **auth:** add Public decorator for bypassing authentication ([5270e2e](https://github.com/DANS-KNAW/rda-gateway/commit/5270e2ef8c8d387d93d3638c5db24f15235989b7))
+* **auth:** register ApiKeyGuard globally and mark public routes ([50a9ec6](https://github.com/DANS-KNAW/rda-gateway/commit/50a9ec6511711096c5e4ba7d2dbdd6d41bb5dbcd))
+* **config:** add API_KEY to IAM configuration schema ([0a50fce](https://github.com/DANS-KNAW/rda-gateway/commit/0a50fce1509a8ecb853d9ec95333db10c9427756))
+
+
+### Tests
+
+* **e2e:** add API key authentication tests ([d6b67fa](https://github.com/DANS-KNAW/rda-gateway/commit/d6b67fa108d0cfe328080362d282e2f8b7125618))
+
+
+### Documentation
+
+* **swagger:** add API key security scheme ([a147d19](https://github.com/DANS-KNAW/rda-gateway/commit/a147d19d16cb0e805b389444bf9dbd59774cdda7))
+
 ## 0.1.0 (2026-01-23)
 
 
