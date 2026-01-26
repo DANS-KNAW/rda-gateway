@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -582,8 +583,15 @@ export class KnowledgeBaseService {
     }
   }
 
-  async createAnnotation(annotation: Annotation) {
+  async createAnnotation(annotation: Annotation, userOrcid: string) {
     const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXZ');
+
+    // Validate that the submitter matches the authenticated user's identity
+    if (annotation.submitter !== userOrcid) {
+      throw new ForbiddenException(
+        "Submitter must match the authenticated user's identity",
+      );
+    }
 
     // Validate ORCID format and resolve submitter name from ORCID API
     if (!this.orcidService.isValidOrcid(annotation.submitter)) {
@@ -1018,7 +1026,7 @@ export class KnowledgeBaseService {
     return document;
   }
 
-  async deleteAnnotation(uuid_rda: string) {
+  async deleteAnnotation(uuid_rda: string, userOrcid: string) {
     // First verify the resource exists and is an annotation
     const resource = await this.dataSource.query<ResourceRow[]>(
       `SELECT * FROM resource WHERE uuid_rda = $1 AND resource_source = 'Annotation' LIMIT 1`,
@@ -1027,6 +1035,11 @@ export class KnowledgeBaseService {
 
     if (resource.length < 1) {
       throw new NotFoundException('Annotation not found');
+    }
+
+    // Verify the authenticated user owns this annotation
+    if (resource[0].submitter !== userOrcid) {
+      throw new ForbiddenException('You can only delete your own annotations');
     }
 
     const queryRunner = this.dataSource.createQueryRunner();

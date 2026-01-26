@@ -15,6 +15,7 @@ import iamConfig from './config/iam.config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 import { ApiKeyGuard } from './common/guards/api-key.guard';
+import { IamModule } from './iam/iam.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ApiKeyGuard } from './common/guards/api-key.guard';
     VocabulariesModule,
     IngestsModule,
     KnowledgeBaseModule,
+    IamModule,
     HttpModule.register({ timeout: 5000 }),
     ScheduleModule.forRoot(),
   ],
