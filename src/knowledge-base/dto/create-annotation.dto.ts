@@ -107,14 +107,7 @@ export class AnnotationTargetDto {
     type: 'array',
   })
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => Object)
-  selector: (
-    | TextQuoteSelectorDto
-    | TextPositionSelectorDto
-    | RangeSelectorDto
-    | PageSelectorDto
-  )[];
+  selector: any[];
 }
 
 // Vocabulary DTO
