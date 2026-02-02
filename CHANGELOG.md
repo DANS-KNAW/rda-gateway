@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.1](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.0...v0.2.1) (2026-02-02)
+
+
+### Features
+
+* **iam:** add Keycloak JWT authentication with JWKS validation ([3330e2f](https://github.com/DANS-KNAW/rda-gateway/commit/3330e2fac9554adb9597321cbd217b0a8cd198c5))
+* **ingests:** add row-based CSV ingestion mode ([d285ef1](https://github.com/DANS-KNAW/rda-gateway/commit/d285ef19edfb8cd3a4a02043329ecb53389da1d9))
+* **knowledge-base:** protect annotation endpoints with JWT auth ([72dc66b](https://github.com/DANS-KNAW/rda-gateway/commit/72dc66b0489d64bbfb67a1bacdb341b0de39aba3))
+* move eosc_task_forces, erics, he_projects to keyword vocabulary ([9154293](https://github.com/DANS-KNAW/rda-gateway/commit/9154293d96de9d69e974d2764208c232a92c3132))
+
+
+### Bug Fixes
+
+* **knowledge-base:** loosen selector validation in annotation DTO ([8647070](https://github.com/DANS-KNAW/rda-gateway/commit/8647070960af11e9be54f08bc6d51725b438c06b))
+
+
+### Tests
+
+* update tests for JWT authentication requirements ([5336feb](https://github.com/DANS-KNAW/rda-gateway/commit/5336feb8b7ac6b2071500f6d6e38f973807a112d))
+
+
+### Code Refactoring
+
+* **auth:** move API key guard from global to controller-level ([0376095](https://github.com/DANS-KNAW/rda-gateway/commit/0376095a376bec069ac8b5088a294c8b9195bcfa))
+
 ## [0.2.0](https://github.com/DANS-KNAW/rda-gateway/compare/v0.1.0...v0.2.0) (2026-01-26)
 
 
