@@ -7,7 +7,7 @@ export class IngestFilesDto {
   @IsString({ each: true })
   @Transform(({ value }) => {
     if (typeof value === 'string') return [value];
-    if (Array.isArray(value)) return value;
+    if (Array.isArray(value)) return value as string[];
     return [];
   })
   excludedColumns?: string[] = [];

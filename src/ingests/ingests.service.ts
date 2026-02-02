@@ -86,7 +86,8 @@ export class IngestsService {
       for (const column of columnsToProcess) {
         this.logger.log(`Processing vocabulary: ${column}`);
 
-        const fileNameWithoutExt = customNamespace || file.originalname.replace(/\.[^/.]+$/, '');
+        const fileNameWithoutExt =
+          customNamespace || file.originalname.replace(/\.[^/.]+$/, '');
         const scheme_uri = `https://${fileNameWithoutExt}/vocabulary/${encodeURIComponent(column)}`;
         const uniqueValues = this.getUniqueColumnValues(records, column);
 
@@ -221,7 +222,8 @@ export class IngestsService {
         `Row mode: using "${valueColumn}" as value, ${metadataColumns.length} columns as metadata`,
       );
 
-      const namespace = customNamespace || file.originalname.replace(/\.[^/.]+$/, '');
+      const namespace =
+        customNamespace || file.originalname.replace(/\.[^/.]+$/, '');
       const subject_scheme = customSubjectScheme || namespace;
       const scheme_uri =
         customSchemeUri ||
@@ -300,7 +302,9 @@ export class IngestsService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Error processing CSV file (row mode): ${errorMessage}`);
+      this.logger.error(
+        `Error processing CSV file (row mode): ${errorMessage}`,
+      );
       throw error;
     }
   }
@@ -349,9 +353,7 @@ export class IngestsService {
     customNamespace?: string,
     descriptionColumn?: string,
   ) {
-    this.logger.log(
-      `Ingesting ${files.length} files in ${mode} mode...`,
-    );
+    this.logger.log(`Ingesting ${files.length} files in ${mode} mode...`);
 
     const results: IngestResult[] = [];
 
