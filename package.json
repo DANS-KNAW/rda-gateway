@@ -10,6 +10,7 @@
     "prebuild": "pnpm run generate-build-info",
     "prestart:dev": "pnpm run generate-build-info",
     "prestart:debug": "pnpm run generate-build-info",
+    "pretest": "pnpm run generate-build-info",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
