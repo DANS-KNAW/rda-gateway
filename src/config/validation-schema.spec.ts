@@ -8,6 +8,8 @@ describe('Validation Schema', () => {
       NODE_ENV: 'development',
       API_PORT: 3000,
       ANNOTATOR_MIN_VERSION: '1.0.0',
+      APP_VERSION: 'unknown',
+      APP_NAME: 'rda-gateway',
 
       AUTH_STRATEGY: 'keycloak',
       KEYCLOAK_CLIENT_ID: 'rda-auth',

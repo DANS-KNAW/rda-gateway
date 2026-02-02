@@ -51,6 +51,11 @@ RUN --mount=type=cache,target=/app/.cache \
 FROM gcr.io/distroless/nodejs22-debian12@sha256:4c6848a24760c190338d20c3fd2e987431f8fe05c4067a114801cb66ca0018a1 AS runner
 WORKDIR /app
 
+ARG APP_VERSION=unknown
+ARG APP_NAME=rda-gateway
+ENV APP_VERSION=${APP_VERSION}
+ENV APP_NAME=${APP_NAME}
+
 COPY --from=init-provider --chown=nonroot:nonroot /usr/bin/dumb-init /usr/bin/dumb-init
 COPY --from=deps-prod --chown=nonroot:nonroot /app/node_modules ./node_modules
 COPY --from=builder --chown=nonroot:nonroot /app/dist ./dist

@@ -111,8 +111,11 @@ export class AppService {
     }
   }
 
-  getHello(): string {
-    return 'Hello World!';
+  getHello() {
+    return {
+      version: this.config.APP_VERSION,
+      message: `Welcome to ${this.config.APP_NAME}`,
+    };
   }
 
   async getAnnotator(): Promise<AnnotatorMetadataRow> {
