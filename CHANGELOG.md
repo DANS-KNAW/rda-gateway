@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.5](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.4...v0.2.5) (2026-02-02)
+
+
+### Bug Fixes
+
+* add pretest hook for build-info generation in CI ([6ea0bd9](https://github.com/DANS-KNAW/rda-gateway/commit/6ea0bd9942a72d82b2cfd6a5d27fa4795806826d))
+
 ### [0.2.4](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.3...v0.2.4) (2026-02-02)
 
 
