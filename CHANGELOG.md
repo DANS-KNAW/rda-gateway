@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.3](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.2...v0.2.3) (2026-02-02)
+
+
+### Features
+
+* make getHello endpoint dynamic via config ([4f7964e](https://github.com/DANS-KNAW/rda-gateway/commit/4f7964e12d1784fb1f8b4749c6d4541f21e5207c))
+
 ### [0.2.2](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.1...v0.2.2) (2026-02-02)
 
 
