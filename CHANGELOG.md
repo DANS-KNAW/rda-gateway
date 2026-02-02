@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.4](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.3...v0.2.4) (2026-02-02)
+
+
+### Bug Fixes
+
+* embed version at compile time via prebuild hook ([5310da2](https://github.com/DANS-KNAW/rda-gateway/commit/5310da2f8eab72c9a1174159ca12e55502283c8d))
+
 ### [0.2.3](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.2...v0.2.3) (2026-02-02)
 
 
