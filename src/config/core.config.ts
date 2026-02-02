@@ -17,25 +17,21 @@ export const CoreConfigSchema = z.object({
    * Minimum required version of the annotator service.
    */
   ANNOTATOR_MIN_VERSION: z.string().min(1),
+});
 
-  /**
-   * Application version. Auto-detected from package.json when running via pnpm.
-   * Set explicitly via APP_VERSION env var in production Docker builds.
-   */
-  APP_VERSION: z.string().default('unknown'),
-
-  /**
-   * Application name. Auto-detected from package.json when running via pnpm.
-   * Set explicitly via APP_NAME env var in production Docker builds.
-   */
-  APP_NAME: z.string().default('rda-gateway'),
+/**
+ * Full config type including build-time values not subject to env validation.
+ */
+const CoreConfigWithBuildInfo = CoreConfigSchema.extend({
+  APP_VERSION: z.string(),
+  APP_NAME: z.string(),
 });
 
 export const CONFIG_CORE_TOKEN = Symbol('app:config.core');
 
 export default registerAs(
   CONFIG_CORE_TOKEN,
-  (): z.infer<typeof CoreConfigSchema> => ({
+  (): z.infer<typeof CoreConfigWithBuildInfo> => ({
     NODE_ENV: process.env.NODE_ENV,
     API_PORT: process.env.API_PORT,
     ANNOTATOR_MIN_VERSION: process.env.ANNOTATOR_MIN_VERSION,
