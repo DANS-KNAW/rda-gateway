@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.2](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.1...v0.2.2) (2026-02-02)
+
+
+### Bug Fixes
+
+* **ingests:** add type assertion to fix no-unsafe-return lint error ([bd9382b](https://github.com/DANS-KNAW/rda-gateway/commit/bd9382b423fdda96a8624d3e71045b93f9ccbfd6))
+
 ### [0.2.1](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.0...v0.2.1) (2026-02-02)
 
 
