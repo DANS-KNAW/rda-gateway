@@ -6,6 +6,10 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "generate-build-info": "node -e \"const p=require('./package.json');require('fs').writeFileSync('src/build-info.ts','export const BUILD_VERSION = \\'' + p.version + '\\';\\nexport const BUILD_NAME = \\'' + p.name + '\\';\\n')\"",
+    "prebuild": "pnpm run generate-build-info",
+    "prestart:dev": "pnpm run generate-build-info",
+    "prestart:debug": "pnpm run generate-build-info",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

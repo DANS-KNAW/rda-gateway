@@ -1,5 +1,6 @@
 import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
+import { BUILD_VERSION, BUILD_NAME } from '../build-info';
 
 export const CoreConfigSchema = z.object({
   /**
@@ -38,7 +39,9 @@ export default registerAs(
     NODE_ENV: process.env.NODE_ENV,
     API_PORT: process.env.API_PORT,
     ANNOTATOR_MIN_VERSION: process.env.ANNOTATOR_MIN_VERSION,
-    APP_VERSION: process.env.APP_VERSION ?? process.env.npm_package_version,
-    APP_NAME: process.env.APP_NAME ?? process.env.npm_package_name,
+    APP_VERSION:
+      process.env.APP_VERSION ?? process.env.npm_package_version ?? BUILD_VERSION,
+    APP_NAME:
+      process.env.APP_NAME ?? process.env.npm_package_name ?? BUILD_NAME,
   }),
 );

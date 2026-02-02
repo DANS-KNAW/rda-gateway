@@ -1,5 +1,8 @@
 # compiled output
 /dist
+
+# generated at build time
+src/build-info.ts
 /node_modules
 /build
 
