@@ -26,7 +26,7 @@ services:
       - node.name=es01
       - cluster.name=docker-cluster
       - discovery.type=single-node
-      - ELASTIC_PASSWORD=El@st1c!Str0ngP@ss2025# # CHANGED: strong password
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-El@st1c!Str0ngP@ss2025#}
       - bootstrap.memory_lock=true
       - ES_JAVA_OPTS=-Xms1g -Xmx1g
       - xpack.security.enabled=true # CHANGED: security enabled
@@ -54,7 +54,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -s -u elastic:El@st1c!Str0ngP@ss2025# http://localhost:9200 | grep -q 'You Know, for Search'",
+          "curl -s -u elastic:$${ELASTIC_PASSWORD:-El@st1c!Str0ngP@ss2025#} http://localhost:9200 | grep -q 'You Know, for Search'",
         ]
       interval: 10s
       timeout: 10s
