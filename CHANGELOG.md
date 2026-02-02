@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.6](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.5...v0.2.6) (2026-02-02)
+
+
+### Bug Fixes
+
+* remove APP_VERSION from validation schema to prevent Zod default override ([df27b7d](https://github.com/DANS-KNAW/rda-gateway/commit/df27b7d0ca7555ab6ebe5bbdb82240cc776034ca))
+
 ### [0.2.5](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.4...v0.2.5) (2026-02-02)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "rda-gateway",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "",
   "author": "",
   "private": true,
@@ -11,6 +11,7 @@
     "prestart:dev": "pnpm run generate-build-info",
     "prestart:debug": "pnpm run generate-build-info",
     "pretest": "pnpm run generate-build-info",
+    "prelint": "pnpm run generate-build-info",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
