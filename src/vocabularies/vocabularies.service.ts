@@ -285,7 +285,7 @@ export class VocabulariesService {
       value_uri: row.id,
       namespace: namespace,
       additional_metadata: {
-        description: row.description || undefined,
+        description: row.description || row.subject_scheme || undefined,
         url: row.url || undefined,
       },
       deleted_at: null,
