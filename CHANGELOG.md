@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.8](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.7...v0.2.8) (2026-02-03)
+
+
+### Bug Fixes
+
+* **vocabularies:** use subject_scheme as description fallback for keywords ([e537141](https://github.com/DANS-KNAW/rda-gateway/commit/e5371411c8923cf3d609d20aef336907a3824b68))
+
 ### [0.2.7](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.6...v0.2.7) (2026-02-03)
 
 
