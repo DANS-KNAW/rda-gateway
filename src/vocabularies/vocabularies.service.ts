@@ -20,6 +20,7 @@ interface DedicatedTableRow {
   label: string;
   description?: string;
   url?: string;
+  subject_scheme?: string;
 }
 
 @Injectable()
@@ -92,6 +93,7 @@ export class VocabulariesService {
       labelField: string;
       descField?: string;
       urlField?: string;
+      subjectSchemeField?: string;
     }
   > = {
     rda_working_groups: {
@@ -137,6 +139,7 @@ export class VocabulariesService {
       table: 'keyword',
       idField: 'uuid_keyword',
       labelField: 'keyword',
+      subjectSchemeField: 'subject_scheme',
     },
     rda_resource_types: {
       table: 'uri_type',
@@ -234,13 +237,22 @@ export class VocabulariesService {
       throw new BadRequestException(`Unknown namespace: ${namespace}`);
     }
 
-    const { table, idField, labelField, descField, urlField } = mapping;
+    const {
+      table,
+      idField,
+      labelField,
+      descField,
+      urlField,
+      subjectSchemeField,
+    } = mapping;
     const { amount = 500, offset = 0, valueScheme } = options;
 
     // Build query with optional search filter
     let query = `SELECT "${idField}" as id, "${labelField}" as label`;
     if (descField) query += `, "${descField}" as description`;
     if (urlField) query += `, "${urlField}" as url`;
+    if (subjectSchemeField)
+      query += `, "${subjectSchemeField}" as subject_scheme`;
     query += ` FROM "${table}"`;
 
     const params: string[] = [];
@@ -267,7 +279,7 @@ export class VocabulariesService {
 
     // Transform to Vocabulary format (dedicated tables don't have timestamp fields)
     return results.map((row) => ({
-      subject_scheme: namespace,
+      subject_scheme: row.subject_scheme || namespace,
       scheme_uri: namespace,
       value_scheme: row.label,
       value_uri: row.id,
