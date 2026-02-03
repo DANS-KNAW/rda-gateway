@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.7](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.6...v0.2.7) (2026-02-03)
+
+
+### Features
+
+* **keywords:** add subject_scheme support for vocabulary source display ([dc35c84](https://github.com/DANS-KNAW/rda-gateway/commit/dc35c84e74b787e2798b598ed871ca0e3d104fb4))
+
 ### [0.2.6](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.5...v0.2.6) (2026-02-02)
 
 
