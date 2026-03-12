@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.9](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.8...v0.2.9) (2026-03-12)
+
+
+### Features
+
+* **annotator:** add Firefox zip URL tracking ([f7e49c7](https://github.com/DANS-KNAW/rda-gateway/commit/f7e49c7c71806bd144b9fa0687ae184be423de21))
+
 ### [0.2.8](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.7...v0.2.8) (2026-02-03)
 
 
