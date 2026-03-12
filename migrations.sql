@@ -37,6 +37,9 @@ CREATE TABLE IF NOT EXISTS annotator_metadata (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Add Firefox zip URL to annotator metadata
+ALTER TABLE annotator_metadata ADD COLUMN IF NOT EXISTS firefox_zip_url VARCHAR;
+
 -- Add annotation_target column to resource table
 ALTER TABLE resource ADD COLUMN IF NOT EXISTS annotation_target JSONB;
 
