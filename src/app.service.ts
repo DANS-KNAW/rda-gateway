@@ -31,6 +31,7 @@ interface GitHubRelease {
 export interface AnnotatorMetadataRow {
   version: string;
   chrome_zip_url: string;
+  firefox_zip_url: string | null;
   release_date: string;
   is_prerelease: boolean;
   file_size_bytes: number;
@@ -80,6 +81,10 @@ export class AppService {
         throw new Error(`No Chrome zip found for version ${version}`);
       }
 
+      const firefoxAsset = latestRelease.assets.find((asset) =>
+        /rda-annotator-.*-firefox\.zip$/.test(asset.name),
+      );
+
       const existing = await this.dataSource.query<{ version: string }[]>(
         'SELECT version FROM annotator_metadata WHERE version = $1',
         [version],
@@ -91,12 +96,13 @@ export class AppService {
       }
 
       await this.dataSource.query(
-        `INSERT INTO annotator_metadata 
-         (version, chrome_zip_url, release_date, is_prerelease, file_size_bytes, sha256_digest, name)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        `INSERT INTO annotator_metadata
+         (version, chrome_zip_url, firefox_zip_url, release_date, is_prerelease, file_size_bytes, sha256_digest, name)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
           version,
           chromeAsset.browser_download_url,
+          firefoxAsset?.browser_download_url || null,
           latestRelease.published_at,
           latestRelease.prerelease,
           chromeAsset.size,
