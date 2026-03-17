@@ -73,7 +73,9 @@ export class KnowledgeBaseController {
   @UseGuards(ApiKeyGuard)
   @Get('index/deposits')
   @ApiSecurity('api-key')
-  @ApiOperation({ summary: 'Trigger indexing of all deposits' })
+  @ApiOperation({
+    summary: 'Trigger full reindex of all deposits and annotations',
+  })
   indexDeposits() {
     return this.knowledgeBaseService.indexAllDeposits();
   }
@@ -81,7 +83,9 @@ export class KnowledgeBaseController {
   @UseGuards(ApiKeyGuard)
   @Get('index/annotations')
   @ApiSecurity('api-key')
-  @ApiOperation({ summary: 'Trigger indexing of all annotations' })
+  @ApiOperation({
+    summary: 'Trigger full reindex of all deposits and annotations',
+  })
   indexAnnotations() {
     return this.knowledgeBaseService.indexAllAnnotations();
   }
