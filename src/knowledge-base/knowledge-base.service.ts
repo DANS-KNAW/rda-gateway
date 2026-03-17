@@ -6,6 +6,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { DataSource } from 'typeorm';
@@ -55,6 +56,7 @@ import {
 @Injectable()
 export class KnowledgeBaseService {
   private readonly logger = new Logger(KnowledgeBaseService.name);
+  private isReindexing = false;
 
   constructor(
     private dataSource: DataSource,
@@ -440,95 +442,192 @@ export class KnowledgeBaseService {
     return documents;
   }
 
-  async indexExists() {
-    const alias = await this.elasticsearchService.indices.existsAlias({
+  private async createNewIndex(indexName: string) {
+    const result = await this.elasticsearchService.indices.create({
+      index: indexName,
+      mappings: {
+        properties: {
+          dc_date: {
+            type: 'date',
+            format:
+              'dd-MM-yyyy||d-M-yyyy||dd-M-yyyy||d-MM-yyyy||strict_date_optional_time||epoch_millis',
+          },
+          dc_type: { type: 'keyword' },
+        },
+      },
+      settings: {
+        number_of_shards: 1,
+        number_of_replicas: 1,
+      },
+    });
+
+    if (!result.acknowledged) {
+      throw new Error(`Failed to create index ${indexName}`);
+    }
+
+    return result;
+  }
+
+  private async getCurrentIndexBehindAlias(): Promise<string | null> {
+    const exists = await this.elasticsearchService.indices.existsAlias({
       name: this.config.ELASTIC_ALIAS_NAME,
     });
 
-    if (!alias) {
-      const indice = await this.elasticsearchService.indices.create({
-        index: this.config.ELASTIC_ALIAS_NAME + '-0001',
-        mappings: {
-          properties: {
-            dc_date: {
-              type: 'date',
-              format:
-                'dd-MM-yyyy||d-M-yyyy||dd-M-yyyy||d-MM-yyyy||strict_date_optional_time||epoch_millis',
-            },
-            dc_type: { type: 'keyword' },
-          },
-        },
-        settings: {
-          number_of_shards: 1,
-          number_of_replicas: 1,
-        },
-      });
+    if (!exists) return null;
 
-      if (indice.acknowledged != true) {
-        const exists = await this.elasticsearchService.indices.exists({
-          index: this.config.ELASTIC_ALIAS_NAME + '-0001',
-        });
+    const aliasInfo = await this.elasticsearchService.indices.getAlias({
+      name: this.config.ELASTIC_ALIAS_NAME,
+    });
 
-        if (!exists) {
-          throw new Error('Failed to create initial index');
-        }
-      }
+    const indices = Object.keys(aliasInfo);
+    return indices.length > 0 ? indices[0] : null;
+  }
 
-      const aliasIndice = await this.elasticsearchService.indices.putAlias({
-        index: this.config.ELASTIC_ALIAS_NAME + '-0001',
-        name: this.config.ELASTIC_ALIAS_NAME,
-      });
+  private async swapAliasAndDeleteOld(oldIndex: string, newIndex: string) {
+    await this.elasticsearchService.indices.updateAliases({
+      actions: [
+        { remove: { index: oldIndex, alias: this.config.ELASTIC_ALIAS_NAME } },
+        { add: { index: newIndex, alias: this.config.ELASTIC_ALIAS_NAME } },
+      ],
+    });
 
-      if (!aliasIndice.acknowledged) {
-        const exists = await this.elasticsearchService.indices.existsAlias({
-          name: this.config.ELASTIC_ALIAS_NAME,
-        });
-        if (!exists) {
-          throw new Error('Failed to create initial alias');
-        }
-      }
+    this.logger.log(`Alias swapped from ${oldIndex} to ${newIndex}`);
 
-      return aliasIndice.acknowledged;
-    }
+    await this.elasticsearchService.indices.delete({ index: oldIndex });
+    this.logger.log(`Deleted old index ${oldIndex}`);
+  }
+
+  async indexExists() {
+    const currentIndex = await this.getCurrentIndexBehindAlias();
+    if (currentIndex) return true;
+
+    const bootstrapIndex = this.config.ELASTIC_ALIAS_NAME + '-0001';
+    await this.createNewIndex(bootstrapIndex);
+
+    await this.elasticsearchService.indices.putAlias({
+      index: bootstrapIndex,
+      name: this.config.ELASTIC_ALIAS_NAME,
+    });
 
     return true;
   }
 
   async indexAllDeposits() {
-    const aliasReady = await this.indexExists();
-    if (!aliasReady) {
-      throw new Error('Alias is not ready');
+    this.isReindexing = true;
+    try {
+      await this.indexExists();
+
+      const oldIndex = await this.getCurrentIndexBehindAlias();
+      if (!oldIndex) {
+        throw new Error('No index behind alias after bootstrap');
+      }
+
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[-:T]/g, '')
+        .slice(0, 14);
+      const newIndex = `${this.config.ELASTIC_ALIAS_NAME}-${timestamp}`;
+
+      this.logger.log(`Creating new index ${newIndex} for blue-green swap`);
+      await this.createNewIndex(newIndex);
+
+      try {
+        // Build and index deposits
+        const depositDocs = await this.createDepositDocument();
+        this.logger.log(
+          `Indexing ${depositDocs.length} deposits into ${newIndex}`,
+        );
+
+        let totalIndexed = 0;
+        let totalErrors = false;
+        let totalTook = 0;
+
+        if (depositDocs.length > 0) {
+          const depositAction = await this.elasticsearchService.bulk({
+            index: newIndex,
+            refresh: true,
+            operations: depositDocs.flatMap((doc) => [
+              { index: { _index: newIndex, _id: doc.uuid_rda } },
+              doc,
+            ]),
+          });
+
+          if (depositAction.errors) {
+            const failedDocs = depositAction.items.filter((item) => {
+              const op =
+                item.index || item.create || item.update || item.delete;
+              return op && op.error;
+            });
+            this.logger.error(
+              `Failed to index ${failedDocs.length} deposit documents`,
+            );
+            throw new Error(
+              `Failed to index ${failedDocs.length} deposit documents`,
+            );
+          }
+
+          totalIndexed += depositAction.items.length;
+          totalTook += depositAction.took;
+        }
+
+        // Build and index annotations
+        const annotationDocs = await this.createAnnotationDocuments();
+        this.logger.log(
+          `Indexing ${annotationDocs.length} annotations into ${newIndex}`,
+        );
+
+        if (annotationDocs.length > 0) {
+          const annotationAction = await this.elasticsearchService.bulk({
+            index: newIndex,
+            refresh: true,
+            operations: annotationDocs.flatMap((doc) => [
+              { index: { _index: newIndex, _id: doc.uuid_rda } },
+              doc,
+            ]),
+          });
+
+          if (annotationAction.errors) {
+            const failedDocs = annotationAction.items.filter((item) => {
+              const op =
+                item.index || item.create || item.update || item.delete;
+              return op && op.error;
+            });
+            this.logger.error(
+              `Failed to index ${failedDocs.length} annotation documents`,
+            );
+            throw new Error(
+              `Failed to index ${failedDocs.length} annotation documents`,
+            );
+          }
+
+          totalIndexed += annotationAction.items.length;
+          totalErrors = totalErrors || annotationAction.errors;
+          totalTook += annotationAction.took;
+        }
+
+        // Swap alias atomically
+        await this.swapAliasAndDeleteOld(oldIndex, newIndex);
+
+        return {
+          indexed: totalIndexed,
+          errors: totalErrors,
+          took: totalTook,
+          oldIndex,
+          newIndex,
+        };
+      } catch (error) {
+        // Clean up: delete the new index on failure
+        this.logger.error('Reindex failed, cleaning up new index', error);
+        try {
+          await this.elasticsearchService.indices.delete({ index: newIndex });
+        } catch {
+          this.logger.error(`Failed to clean up index ${newIndex}`);
+        }
+        throw error;
+      }
+    } finally {
+      this.isReindexing = false;
     }
-
-    const documents = await this.createDepositDocument();
-
-    this.logger.log('Starting indexing of deposit resources');
-
-    const action = await this.elasticsearchService.bulk({
-      index: this.config.ELASTIC_ALIAS_NAME,
-      refresh: true,
-      operations: documents.flatMap((doc) => [
-        {
-          index: { _index: this.config.ELASTIC_ALIAS_NAME, _id: doc.uuid_rda },
-        },
-        doc,
-      ]),
-    });
-
-    if (action.errors) {
-      const failedDocs = action.items.filter((item) => {
-        const operation =
-          item.index || item.create || item.update || item.delete;
-        return operation && operation.error;
-      });
-      this.logger.error(`Failed to index ${failedDocs.length} documents`);
-    }
-
-    return {
-      indexed: action.items.length,
-      errors: action.errors,
-      took: action.took,
-    };
   }
 
   async getAllIndexDocuments(query: object) {
@@ -584,6 +683,12 @@ export class KnowledgeBaseService {
   }
 
   async createAnnotation(annotation: Annotation, userOrcid: string) {
+    if (this.isReindexing) {
+      throw new ServiceUnavailableException(
+        'Reindex in progress, please retry',
+      );
+    }
+
     const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXZ');
 
     // Validate that the submitter matches the authenticated user's identity
@@ -1027,6 +1132,12 @@ export class KnowledgeBaseService {
   }
 
   async deleteAnnotation(uuid_rda: string, userOrcid: string) {
+    if (this.isReindexing) {
+      throw new ServiceUnavailableException(
+        'Reindex in progress, please retry',
+      );
+    }
+
     // First verify the resource exists and is an annotation
     const resource = await this.dataSource.query<ResourceRow[]>(
       `SELECT * FROM resource WHERE uuid_rda = $1 AND resource_source = 'Annotation' LIMIT 1`,
@@ -1125,18 +1236,17 @@ export class KnowledgeBaseService {
   }
 
   async indexAllAnnotations() {
-    const aliasReady = await this.indexExists();
-    if (!aliasReady) {
-      throw new Error('Alias is not ready');
-    }
+    return this.indexAllDeposits();
+  }
 
+  private async createAnnotationDocuments(): Promise<
+    Record<string, unknown>[]
+  > {
     const annotations = await this.dataSource.query<ResourceRow[]>(
       "SELECT * FROM resource WHERE resource_source = 'Annotation'",
     );
 
-    this.logger.log(
-      `Starting re-indexing of ${annotations.length} annotations`,
-    );
+    this.logger.log(`Starting building of ${annotations.length} annotations`);
     const startTime = Date.now();
 
     const documents: Record<string, unknown>[] = [];
@@ -1298,33 +1408,7 @@ export class KnowledgeBaseService {
       `Finished building ${annotations.length} annotation documents in ${timeDiff}ms`,
     );
 
-    this.logger.log('Starting indexing of annotation resources');
-
-    const action = await this.elasticsearchService.bulk({
-      index: this.config.ELASTIC_ALIAS_NAME,
-      refresh: true,
-      operations: documents.flatMap((doc) => [
-        {
-          index: { _index: this.config.ELASTIC_ALIAS_NAME, _id: doc.uuid_rda },
-        },
-        doc,
-      ]),
-    });
-
-    if (action.errors) {
-      const failedDocs = action.items.filter((item) => {
-        const operation =
-          item.index || item.create || item.update || item.delete;
-        return operation && operation.error;
-      });
-      this.logger.error(`Failed to index ${failedDocs.length} annotations`);
-    }
-
-    return {
-      indexed: action.items.length,
-      errors: action.errors,
-      took: action.took,
-    };
+    return documents;
   }
 
   async createMetric(metricDto: CreateMetricDto): Promise<MetricRow> {
