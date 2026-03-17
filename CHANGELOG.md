@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.10](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.9...v0.2.10) (2026-03-17)
+
+
+### Bug Fixes
+
+* **knowledge-base:** use correct column for discipline lookup ([a4d60c0](https://github.com/DANS-KNAW/rda-gateway/commit/a4d60c080b5c92c14d28b7a7ef6c4001abca1d19))
+
 ### [0.2.9](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.8...v0.2.9) (2026-03-12)
 
 
