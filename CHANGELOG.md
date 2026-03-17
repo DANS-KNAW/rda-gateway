@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.11](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.10...v0.2.11) (2026-03-17)
+
+
+### Features
+
+* **knowledge-base:** blue-green index swap for reindexing ([fbd8698](https://github.com/DANS-KNAW/rda-gateway/commit/fbd86984dacfb06b43151a77c787537ff13fa6a8))
+
 ### [0.2.10](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.9...v0.2.10) (2026-03-17)
 
 
