@@ -164,7 +164,7 @@ export class KnowledgeBaseService {
       const disciplines: DisciplineRow[] = [];
       for (const dr of disciplinesResource) {
         const discipline = await this.dataSource.query<DisciplineRow[]>(
-          `SELECT * FROM discipline WHERE internal_identifier = '${dr.internal_identifier}' LIMIT 1`,
+          `SELECT * FROM discipline WHERE uuid = '${dr.uuid_disciplines}' LIMIT 1`,
         );
         if (discipline.length < 1) {
           continue;
@@ -810,7 +810,7 @@ export class KnowledgeBaseService {
         };
 
         const discipline = (await queryRunner.query(
-          `SELECT * FROM discipline WHERE internal_identifier = $1 LIMIT 1`,
+          `SELECT * FROM discipline WHERE uuid = $1 LIMIT 1`,
           [resourceDiscipline.uuid_disciplines],
         )) as DisciplineRow[];
 
@@ -1193,7 +1193,7 @@ export class KnowledgeBaseService {
       const disciplines: DisciplineRow[] = [];
       for (const dr of disciplinesResource) {
         const discipline = await this.dataSource.query<DisciplineRow[]>(
-          `SELECT * FROM discipline WHERE internal_identifier = '${dr.uuid_disciplines}' LIMIT 1`,
+          `SELECT * FROM discipline WHERE uuid = '${dr.uuid_disciplines}' LIMIT 1`,
         );
         if (discipline.length > 0) {
           disciplines.push(discipline[0]);

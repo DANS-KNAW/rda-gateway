@@ -93,8 +93,9 @@ export interface GorcAttributeRow {
 
 export interface DisciplineResourceRow {
   uuid_resource: string;
-  internal_identifier: string;
-  uuid_disciplines?: string;
+  resource: string;
+  uuid_disciplines: string;
+  disciplines: string;
 }
 
 export interface DisciplineRow {
