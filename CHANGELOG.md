@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.12](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.11...v0.2.12) (2026-11-18)
+
+
+### Bug Fixes
+
+* **docker:** run on distroless nodejs22-debian13 ([192a16f](https://github.com/DANS-KNAW/rda-gateway/commit/192a16ffb9cd987be344cabce557dcf01ced74ac))
+
 ### [0.2.11](https://github.com/DANS-KNAW/rda-gateway/compare/v0.2.10...v0.2.11) (2026-03-17)
 
 
