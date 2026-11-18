@@ -48,7 +48,7 @@ RUN --mount=type=cache,target=/app/.cache \
     pnpm build
 
 # 5. Production image we chosing distroless as it is just as minimal as Alpine but even more secure.
-FROM gcr.io/distroless/nodejs22-debian12@sha256:4c6848a24760c190338d20c3fd2e987431f8fe05c4067a114801cb66ca0018a1 AS runner
+FROM gcr.io/distroless/nodejs22-debian13@sha256:af2e7dd3017037b3ba73238b818c7273f3b4349c005f8bd1454b78d580fe7e37 AS runner
 WORKDIR /app
 
 COPY --from=init-provider --chown=nonroot:nonroot /usr/bin/dumb-init /usr/bin/dumb-init
